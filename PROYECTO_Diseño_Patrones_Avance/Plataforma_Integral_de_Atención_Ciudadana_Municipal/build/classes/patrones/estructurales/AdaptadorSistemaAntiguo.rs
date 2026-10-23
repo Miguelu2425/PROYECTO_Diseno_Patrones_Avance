@@ -1,0 +1,2 @@
+patrones.estructurales.SistemaAntiguoQuejas
+patrones.estructurales.AdaptadorSistemaAntiguo

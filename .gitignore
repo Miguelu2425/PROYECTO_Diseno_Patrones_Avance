@@ -1,0 +1,8 @@
+   build/
+   dist/
+   out/
+   .idea/
+   *.iml
+   *.class
+   **/nbproject/private/
+   config.properties
