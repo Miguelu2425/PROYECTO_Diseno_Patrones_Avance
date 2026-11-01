@@ -20,6 +20,9 @@ public class ObservadorEncuesta implements ObservadorTramite {
 
     @Override
     public void actualizar(CambioEstado cambio) {
+        if (cambio.isEsReversion()) {
+            return; // No se envian encuestas en reversiones de estado
+        }
         if ("Cerrado".equalsIgnoreCase(cambio.getEstadoNuevo())) {
             // Patron Prototype: clona la encuesta base
             EncuestaSatisfaccion copia = prototipo.clone();

@@ -15,10 +15,16 @@ public class ObservadorCiudadano implements ObservadorTramite {
 
     @Override
     public void actualizar(CambioEstado cambio) {
-        String mensaje = "Su tramite " + cambio.getCodigo()
-                + " paso al estado " + cambio.getEstadoNuevo();
+        String mensaje;
+        if (cambio.isEsReversion()) {
+            mensaje = "Su tramite " + cambio.getCodigo()
+                    + " fue corregido al estado " + cambio.getEstadoNuevo();
+        } else {
+            mensaje = "Su tramite " + cambio.getCodigo()
+                    + " paso al estado " + cambio.getEstadoNuevo();
+        }
 
-        // Patron Bridge: AlertaCiudadano sobre CanalCorreo
+        // Patron Bridge: AlertaCiudadano sobre CanalCorreo (antepone "Alerta municipal: ")
         new AlertaCiudadano(new CanalCorreo()).enviar(mensaje);
 
         // Patron Decorator: NotificadorSMS envolviendo NotificadorBase

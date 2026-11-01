@@ -59,4 +59,40 @@ public class AtencionController {
     public String estadoConexion() {
         return mesaPartes.descripcionRepositorio();
     }
+
+    /**
+     * Patron Command: deshace la ultima accion ejecutada (registro o cambio de estado).
+     *
+     * @return descripcion de la accion deshecha o null si no habia acciones
+     */
+    public String deshacerUltimaAccion() {
+        return mesaPartes.deshacerUltimaAccion();
+    }
+
+    /**
+     * Patron Command: consulta si hay acciones en la pila listas para deshacer.
+     *
+     * @return true si se puede deshacer; false si la pila esta vacia
+     */
+    public boolean puedeDeshacer() {
+        return mesaPartes.puedeDeshacer();
+    }
+
+    /**
+     * Patron Command: obtiene la descripcion de la ultima accion que se puede deshacer.
+     *
+     * @return descripcion de la accion o null si no hay ninguna
+     */
+    public String descripcionUltimaAccion() {
+        return mesaPartes.descripcionUltimaAccion();
+    }
+
+    /**
+     * Patron Command: devuelve el historial de descripciones de acciones pendientes de deshacer.
+     *
+     * @return lista de descripciones
+     */
+    public List<String> historialAcciones() {
+        return mesaPartes.historialAcciones();
+    }
 }

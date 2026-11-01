@@ -24,7 +24,7 @@ public class TramiteRepositorioMemoria implements TramiteRepositorio {
 
     /** {@inheritDoc} */
     @Override
-    public Expediente registrar(Ciudadano ciudadano, String tipoTramite) {
+    public synchronized Expediente registrar(Ciudadano ciudadano, String tipoTramite) {
         int seq = secuencia.incrementAndGet();
         String anio = String.valueOf(LocalDateTime.now().getYear());
         String codigo = "EXP-" + anio + "-" + String.format("%04d", seq);
@@ -45,7 +45,7 @@ public class TramiteRepositorioMemoria implements TramiteRepositorio {
 
     /** {@inheritDoc} */
     @Override
-    public Expediente cambiarEstado(String codigo, String estadoNuevo) {
+    public synchronized Expediente cambiarEstado(String codigo, String estadoNuevo) {
         validarEstadoOficial(estadoNuevo);
 
         for (int i = 0; i < almacen.size(); i++) {
@@ -69,7 +69,7 @@ public class TramiteRepositorioMemoria implements TramiteRepositorio {
 
     /** {@inheritDoc} */
     @Override
-    public Expediente buscarPorCodigo(String codigo) {
+    public synchronized Expediente buscarPorCodigo(String codigo) {
         for (Expediente exp : almacen) {
             if (exp.getCodigo().equals(codigo)) {
                 return exp;
@@ -80,7 +80,24 @@ public class TramiteRepositorioMemoria implements TramiteRepositorio {
 
     /** {@inheritDoc} */
     @Override
-    public List<Expediente> listar(String dniOpcional) {
+    public synchronized void eliminar(String codigo) {
+        for (int i = 0; i < almacen.size(); i++) {
+            Expediente exp = almacen.get(i);
+            if (exp.getCodigo().equals(codigo)) {
+                if (!"En Revision".equals(exp.getEstado())) {
+                    throw new RepositorioException(
+                            "Solo se puede deshacer el registro de un tramite En Revision");
+                }
+                almacen.remove(i);
+                return;
+            }
+        }
+        throw new RepositorioException("Expediente no encontrado: " + codigo);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public synchronized List<Expediente> listar(String dniOpcional) {
         List<Expediente> resultado = new ArrayList<>();
         for (Expediente exp : almacen) {
             if (dniOpcional == null || dniOpcional.equals(exp.getDni())) {

@@ -1,5 +1,6 @@
 package patrones.comportamiento.state;
 
+import patrones.comportamiento.memento.MementoSeguimiento;
 import patrones.comportamiento.observer.CambioEstado;
 import patrones.comportamiento.observer.ObservadorTramite;
 import patrones.creacionales.builder.Expediente;
@@ -8,8 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Patron State (Contexto) y Patron Observer (Sujeto):
- * Administra el estado actual del expediente y coordina la notificacion a observadores.
+ * Patron State (Contexto), Patron Observer (Sujeto) y Patron Memento (Originator):
+ * Administra el estado actual del expediente, coordina la notificacion a observadores
+ * y genera/restaura instantaneas de su estado interno.
  */
 public class SeguimientoTramite {
 
@@ -34,6 +36,51 @@ public class SeguimientoTramite {
      */
     public EstadoTramite getEstado() {
         return estado;
+    }
+
+    /**
+     * Patron State: devuelve el expediente asociado.
+     *
+     * @return expediente
+     */
+    public Expediente getExpediente() {
+        return expediente;
+    }
+
+    /**
+     * Patron Memento: crea una instantanea inmutable del estado actual.
+     *
+     * @return memento con el estado y codigo actuales
+     */
+    public MementoSeguimiento guardar() {
+        MementoSeguimiento memento = new MementoSeguimiento(
+                expediente.getCodigo(),
+                estado.getNombre()
+        );
+        System.out.println("[Memento] Instantanea guardada: " + expediente.getCodigo()
+                + " estado=" + estado.getNombre());
+        return memento;
+    }
+
+    /**
+     * Patron Memento: restaura el estado interno a partir de una instantanea
+     * sin notificar a los observadores (la coordinacion de la notificacion
+     * corresponde al comando que ejecuta la reversion).
+     *
+     * @param m instantanea a restaurar
+     * @throws IllegalArgumentException si el memento es nulo o no pertenece al expediente
+     */
+    public void restaurar(MementoSeguimiento m) {
+        if (m == null) {
+            throw new IllegalArgumentException("El memento no puede ser nulo.");
+        }
+        if (!expediente.getCodigo().equals(m.getCodigo())) {
+            throw new IllegalArgumentException("El memento pertenece al expediente "
+                    + m.getCodigo() + ", no a " + expediente.getCodigo());
+        }
+        this.estado = EstadosTramite.desdeNombre(m.getNombreEstado());
+        System.out.println("[Memento] Estado restaurado: " + expediente.getCodigo()
+                + " estado=" + estado.getNombre());
     }
 
     /**

@@ -77,6 +77,18 @@ public class TramiteRepositorioSqlServer implements TramiteRepositorio {
 
     /** {@inheritDoc} */
     @Override
+    public void eliminar(String codigo) {
+        Connection conn = obtenerConexion();
+        try (CallableStatement cs = conn.prepareCall("{call dbo.sp_EliminarTramite(?)}")) {
+            cs.setString(1, codigo);
+            cs.execute();
+        } catch (SQLException ex) {
+            throw new RepositorioException("Error al eliminar tramite: " + ex.getMessage(), ex);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public List<Expediente> listar(String dniOpcional) {
         Connection conn = obtenerConexion();
         List<Expediente> lista = new ArrayList<>();

@@ -39,6 +39,16 @@ public interface TramiteRepositorio {
     Expediente buscarPorCodigo(String codigo);
 
     /**
+     * Repositorio: elimina un expediente identificado por su codigo unico.
+     * Patrón Command: soporte para la operacion reversible de deshacer registro.
+     * Solo se permite eliminar expedientes en estado 'En Revision'.
+     *
+     * @param codigo codigo del expediente a eliminar
+     * @throws RepositorioException si no se encuentra o no esta en estado 'En Revision'
+     */
+    void eliminar(String codigo);
+
+    /**
      * Repositorio: lista expedientes; filtra por DNI solo si dniOpcional no es null.
      *
      * @param dniOpcional DNI del ciudadano o null para listar todos

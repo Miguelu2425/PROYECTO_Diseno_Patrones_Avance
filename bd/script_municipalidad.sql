@@ -257,7 +257,7 @@ BEGIN
 END
 GO
 
--- 9. PROCEDIMIENTO: sp_ObtenerTramite (NUEVO)
+-- 9. PROCEDIMIENTO: sp_ObtenerTramite
 IF OBJECT_ID('dbo.sp_ObtenerTramite', 'P') IS NOT NULL
     DROP PROCEDURE dbo.sp_ObtenerTramite;
 GO
@@ -274,6 +274,54 @@ BEGIN
     JOIN  Ciudadano   c ON c.id_ciudadano    = e.id_ciudadano
     JOIN  TipoTramite t ON t.id_tipo_tramite = e.id_tipo_tramite
     WHERE e.codigo = @codigo;
+END
+GO
+
+-- 10. PROCEDIMIENTO: sp_EliminarTramite (Patron Command - Deshacer registro)
+IF OBJECT_ID('dbo.sp_EliminarTramite', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.sp_EliminarTramite;
+GO
+
+CREATE PROCEDURE dbo.sp_EliminarTramite
+    @codigo VARCHAR(20)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @id_expediente INT;
+    DECLARE @estado        VARCHAR(30);
+
+    BEGIN TRY
+        BEGIN TRAN;
+
+        -- Buscar expediente con bloqueo
+        SELECT @id_expediente = e.id_expediente, @estado = e.estado
+        FROM   Expediente e WITH (UPDLOCK)
+        WHERE  e.codigo = @codigo;
+
+        IF @id_expediente IS NULL
+            RAISERROR('Expediente no encontrado: %s', 16, 1, @codigo);
+
+        -- Solo se puede eliminar/deshacer si aun esta en estado inicial
+        IF @estado <> 'En Revision'
+            RAISERROR('Solo se puede deshacer el registro de un tramite En Revision', 16, 1);
+
+        -- Borrar primero de HistorialEstado por integridad referencial
+        DELETE FROM HistorialEstado
+        WHERE  id_expediente = @id_expediente;
+
+        -- Borrar el expediente (se conserva el ciudadano para historico)
+        DELETE FROM Expediente
+        WHERE  id_expediente = @id_expediente;
+
+        COMMIT TRAN;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRAN;
+        DECLARE @msg   NVARCHAR(500) = ERROR_MESSAGE();
+        DECLARE @sev   INT           = ERROR_SEVERITY();
+        DECLARE @state INT           = ERROR_STATE();
+        RAISERROR(@msg, @sev, @state);
+    END CATCH
 END
 GO
 
