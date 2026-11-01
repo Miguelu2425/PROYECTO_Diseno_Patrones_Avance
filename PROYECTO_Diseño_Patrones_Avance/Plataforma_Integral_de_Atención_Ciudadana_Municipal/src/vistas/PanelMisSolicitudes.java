@@ -9,11 +9,14 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.BorderLayout;
@@ -51,9 +54,13 @@ public class PanelMisSolicitudes extends JPanel {
     private final JLabel lblSiguienteEstado = new JLabel("");
     private final JButton btnAvanzar = new JButton("Avanzar estado");
 
+    private final JButton btnDeshacer = new JButton("Deshacer última acción");
+    private final JLabel lblUltimaAccion = new JLabel("Sin acciones para deshacer");
+
     private String filtroDniActual = null;
 
     private static final Color COLOR_PRIMARIO = new Color(0, 74, 173); // #004AAD
+    private static final Color COLOR_DESHACER = new Color(180, 40, 40); // Rojo suave para reversion
     private static final Font FUENTE_NORMAL = new Font("SansSerif", Font.PLAIN, 13);
     private static final Font FUENTE_NEGRITA = new Font("SansSerif", Font.BOLD, 13);
 
@@ -97,6 +104,22 @@ public class PanelMisSolicitudes extends JPanel {
 
         // 3. Panel inferior de seguimiento y avance
         add(crearPanelSeguimiento(), BorderLayout.SOUTH);
+
+        // Refresco automatico al hacerse visible
+        addAncestorListener(new AncestorListener() {
+            @Override
+            public void ancestorAdded(AncestorEvent event) {
+                recargar();
+            }
+
+            @Override
+            public void ancestorRemoved(AncestorEvent event) {
+            }
+
+            @Override
+            public void ancestorMoved(AncestorEvent event) {
+            }
+        });
 
         // Cargar solicitudes iniciales
         cargarSolicitudes(null, null);
@@ -253,6 +276,41 @@ public class PanelMisSolicitudes extends JPanel {
         gbc.anchor = GridBagConstraints.EAST;
         panel.add(btnAvanzar, gbc);
 
+        // Separador sutil
+        JSeparator sep = new JSeparator();
+        sep.setForeground(new Color(225, 235, 248));
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(10, 4, 10, 4);
+        panel.add(sep, gbc);
+
+        // Fila 4: Control de Deshacer (Command & Memento)
+        gbc.gridy = 4;
+        gbc.gridx = 0;
+        gbc.gridwidth = 1;
+        gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(2, 6, 2, 6);
+        lblUltimaAccion.setFont(FUENTE_NORMAL);
+        panel.add(lblUltimaAccion, gbc);
+
+        btnDeshacer.setFont(new Font("SansSerif", Font.BOLD, 13));
+        btnDeshacer.setBackground(COLOR_DESHACER);
+        btnDeshacer.setForeground(Color.WHITE);
+        btnDeshacer.setFocusPainted(false);
+        btnDeshacer.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnDeshacer.setEnabled(false);
+        btnDeshacer.addActionListener(e -> AccionDeshacer.ejecutarDeshacer(this, controlador, btnDeshacer, this::recargar));
+
+        gbc.gridx = 1;
+        gbc.weightx = 0;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.EAST;
+        panel.add(btnDeshacer, gbc);
+
         return panel;
     }
 
@@ -277,6 +335,8 @@ public class PanelMisSolicitudes extends JPanel {
     }
 
     private void actualizarDetalleSeleccion() {
+        AccionDeshacer.actualizarEstadoControles(controlador, btnDeshacer, lblUltimaAccion);
+
         int fila = tablaSolicitudes.getSelectedRow();
         if (fila == -1) {
             lblDetalleEstado.setText("Seleccione un expediente de la tabla para ver su seguimiento.");
@@ -422,3 +482,4 @@ public class PanelMisSolicitudes extends JPanel {
         worker.execute();
     }
 }
+

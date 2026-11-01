@@ -78,6 +78,7 @@ public class Main extends JFrame {
     // Paneles de trabajo
     private PanelRegistro panelRegistro;
     private PanelMisSolicitudes panelMisSolicitudes;
+    private PanelHistorialAcciones panelHistorialAcciones;
     private PanelSistema panelSistema;
     private PanelDemoPatrones panelDemoPatrones;
 
@@ -251,9 +252,14 @@ public class Main extends JFrame {
             if (panelMisSolicitudes != null) {
                 panelMisSolicitudes.recargar();
             }
+            if (panelHistorialAcciones != null) {
+                panelHistorialAcciones.cargarHistorial();
+            }
         });
 
         panelMisSolicitudes = new PanelMisSolicitudes(controlador);
+
+        panelHistorialAcciones = new PanelHistorialAcciones(controlador);
 
         panelSistema = new PanelSistema(controlador, this::actualizarEstadoBD);
 
@@ -262,6 +268,7 @@ public class Main extends JFrame {
         // Registro de opciones (una línea por opción)
         agregarOpcion("REGISTRO", "Registrar trámite", panelRegistro);
         agregarOpcion("SEGUIMIENTO", "Mis solicitudes", panelMisSolicitudes);
+        agregarOpcion("SEGUIMIENTO", "Historial de acciones", panelHistorialAcciones);
         agregarOpcion("SISTEMA", "Conexión (Singleton)", panelSistema);
         agregarOpcion("SISTEMA", "Demostración de patrones", panelDemoPatrones);
 
@@ -333,9 +340,11 @@ public class Main extends JFrame {
         String claveCard = seccion + "::" + titulo;
         cardLayout.show(panelCentroCards, claveCard);
 
-        // Si se ingresa a "Mis solicitudes", recargar datos automáticamente
+        // Si se ingresa a "Mis solicitudes" o "Historial de acciones", recargar datos automáticamente
         if ("Mis solicitudes".equals(titulo) && panelMisSolicitudes != null) {
             panelMisSolicitudes.recargar();
+        } else if ("Historial de acciones".equals(titulo) && panelHistorialAcciones != null) {
+            panelHistorialAcciones.cargarHistorial();
         }
     }
 

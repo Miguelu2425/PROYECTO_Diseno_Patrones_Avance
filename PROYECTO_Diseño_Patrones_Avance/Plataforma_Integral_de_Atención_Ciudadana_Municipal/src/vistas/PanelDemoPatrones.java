@@ -113,3 +113,4 @@ public class PanelDemoPatrones extends JPanel {
         worker.execute();
     }
 }
+

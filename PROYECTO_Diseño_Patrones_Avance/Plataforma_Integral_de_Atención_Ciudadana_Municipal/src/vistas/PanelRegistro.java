@@ -198,3 +198,4 @@ public class PanelRegistro extends JPanel {
         tramiteCombo.setSelectedIndex(0);
     }
 }
+
