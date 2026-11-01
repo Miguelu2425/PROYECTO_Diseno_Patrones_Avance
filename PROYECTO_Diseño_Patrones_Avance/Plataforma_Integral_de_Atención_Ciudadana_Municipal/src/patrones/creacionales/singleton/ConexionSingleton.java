@@ -13,7 +13,8 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 /**
- * Singleton: centraliza la única conexión reutilizable con SQL Server.
+ * Singleton: centraliza la unica conexion reutilizable con SQL Server.
+ * Implementa double-checked locking para seguridad en entornos multihilo.
  */
 public final class ConexionSingleton {
 
@@ -28,33 +29,37 @@ public final class ConexionSingleton {
     private final String clave;
 
     /**
-     * Singleton: carga la configuración de conexión sin exponer credenciales
-     * dentro del código fuente.
+     * Singleton: carga la configuracion de conexion sin exponer credenciales
+     * dentro del codigo fuente.
      */
     private ConexionSingleton() {
         cargarArchivo();
 
-        String servidor = obtenerConfiguracion("DB_SERVER", "localhost");
-        String puerto = obtenerConfiguracion("DB_PORT", "1433");
-        String baseDatos = obtenerConfiguracion("DB_NAME", "Municipalidad");
+        String servidor   = obtenerConfiguracion("DB_SERVER", "localhost");
+        String puerto     = obtenerConfiguracion("DB_PORT",   "1433");
+        String baseDatos  = obtenerConfiguracion("DB_NAME",   "Municipalidad");
 
         this.url = "jdbc:sqlserver://" + servidor + ":" + puerto
                 + ";databaseName=" + baseDatos
                 + ";encrypt=true"
                 + ";trustServerCertificate=true";
-        this.usuario = obtenerConfiguracion("DB_USER", "");
-        this.clave = obtenerConfiguracion("DB_PASSWORD", "");
+        this.usuario = obtenerConfiguracion("DB_USER",     "");
+        this.clave   = obtenerConfiguracion("DB_PASSWORD", "");
     }
 
     /**
-     * Singleton: devuelve la instancia única de conexión de forma segura
-     * cuando la aplicación es utilizada por varios hilos.
+     * Singleton: devuelve la instancia unica de conexion de forma segura
+     * cuando la aplicacion es utilizada por varios hilos.
+     * Imprime en consola al crear la instancia por primera vez.
+     *
+     * @return instancia unica de ConexionSingleton
      */
     public static ConexionSingleton getInstancia() {
         if (instancia == null) {
             synchronized (ConexionSingleton.class) {
                 if (instancia == null) {
                     instancia = new ConexionSingleton();
+                    System.out.println("Singleton: creando la unica instancia de conexion");
                 }
             }
         }
@@ -62,22 +67,25 @@ public final class ConexionSingleton {
     }
 
     /**
-     * Singleton: abre la conexión una sola vez y reutiliza una conexión activa.
+     * Singleton: abre la conexion una sola vez y reutiliza una conexion activa.
+     * Imprime en consola cuando reutiliza una conexion ya abierta.
      *
-     * @return conexión a la base de datos Municipalidad
-     * @throws SQLException si faltan credenciales o SQL Server no está disponible
+     * @return conexion a la base de datos Municipalidad
+     * @throws SQLException si faltan credenciales o SQL Server no esta disponible
      */
     public synchronized Connection getConexion() throws SQLException {
         validarCredenciales();
 
         if (conexion == null || conexion.isClosed()) {
             conexion = DriverManager.getConnection(url, usuario, clave);
+        } else {
+            System.out.println("Singleton: reutilizando la conexion existente");
         }
         return conexion;
     }
 
     /**
-     * Singleton: cierra la conexión compartida al finalizar la aplicación.
+     * Singleton: cierra la conexion compartida al finalizar la aplicacion.
      *
      * @throws SQLException si SQL Server informa un error al cerrar
      */
@@ -89,7 +97,7 @@ public final class ConexionSingleton {
 
     /**
      * Singleton: lee el archivo config.properties (UTF-8) si existe en la
-     * carpeta de trabajo, para no escribir credenciales en el código.
+     * carpeta de trabajo, para no escribir credenciales en el codigo.
      */
     private void cargarArchivo() {
         Path ruta = Paths.get(ARCHIVO_CONFIG);
@@ -107,6 +115,10 @@ public final class ConexionSingleton {
     /**
      * Singleton: busca un valor en este orden: propiedad del sistema,
      * variable de entorno, config.properties y valor predeterminado.
+     *
+     * @param nombre           nombre de la clave de configuracion
+     * @param valorPorDefecto  valor a usar si no se encuentra la clave
+     * @return valor de configuracion encontrado o valor por defecto
      */
     private String obtenerConfiguracion(String nombre, String valorPorDefecto) {
         String valor = System.getProperty(nombre);
@@ -123,7 +135,7 @@ public final class ConexionSingleton {
     }
 
     /**
-     * Singleton: evita intentar una conexión silenciosa sin usuario o clave.
+     * Singleton: evita intentar una conexion silenciosa sin usuario o clave.
      *
      * @throws SQLException si no se configuraron las credenciales
      */

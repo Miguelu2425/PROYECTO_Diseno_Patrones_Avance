@@ -2,6 +2,7 @@
 -- Script T-SQL  |  Base de datos: Municipalidad
 -- Proyecto      : Plataforma Integral de Atencion Ciudadana Municipal
 -- Curso         : Diseno de Patrones - Semana 11
+-- IDEMPOTENTE: se puede ejecutar varias veces sin error.
 -- ============================================================
 
 -- 1. CREAR LA BASE DE DATOS
@@ -74,7 +75,23 @@ BEGIN
 END
 GO
 
--- 5. PROCEDIMIENTO: sp_RegistrarTramite
+-- 5. TABLA: HistorialEstado (NUEVA)
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'HistorialEstado')
+BEGIN
+    CREATE TABLE HistorialEstado (
+        id_historial    INT         IDENTITY(1,1) PRIMARY KEY,
+        id_expediente   INT         NOT NULL
+            CONSTRAINT FK_Historial_Expediente
+                REFERENCES Expediente(id_expediente),
+        estado_anterior VARCHAR(30) NULL,
+        estado_nuevo    VARCHAR(30) NOT NULL,
+        fecha_cambio    DATETIME    DEFAULT GETDATE()
+    );
+    PRINT 'Tabla HistorialEstado creada.';
+END
+GO
+
+-- 6. PROCEDIMIENTO: sp_RegistrarTramite (MODIFICADO)
 IF OBJECT_ID('dbo.sp_RegistrarTramite', 'P') IS NOT NULL
     DROP PROCEDURE dbo.sp_RegistrarTramite;
 GO
@@ -91,6 +108,7 @@ BEGIN
     DECLARE @id_tipo_tramite INT;
     DECLARE @codigo          VARCHAR(20);
     DECLARE @id_expediente   INT;
+    DECLARE @secuencia       INT;
 
     BEGIN TRY
         BEGIN TRAN;
@@ -104,26 +122,31 @@ BEGIN
             SET @id_ciudadano = SCOPE_IDENTITY();
         END
 
-        -- Resolver tipo de tramite
+        -- Resolver tipo de tramite (capitalizado)
         SELECT @id_tipo_tramite = id_tipo_tramite FROM TipoTramite WHERE nombre = @tipo_tramite;
         IF @id_tipo_tramite IS NULL
             RAISERROR('Tipo de tramite no encontrado: %s', 16, 1, @tipo_tramite);
 
-        -- Generar codigo unico: EXP-<aaaammdd>-<id_ciudadano>-<secuencia>
-        DECLARE @sec INT;
-        SELECT @sec = ISNULL(MAX(id_expediente), 0) + 1 FROM Expediente;
-        SET @codigo = 'EXP-' + CONVERT(VARCHAR(8), GETDATE(), 112)
-                    + '-' + CAST(@id_ciudadano AS VARCHAR(6))
-                    + '-' + CAST(@sec AS VARCHAR(6));
+        -- Calcular secuencia con bloqueo para evitar duplicados
+        -- Formato: EXP-<anio>-<seq 4 digitos>  ej. EXP-2026-0001
+        SELECT @secuencia = COUNT(*) + 1
+        FROM Expediente WITH (UPDLOCK, HOLDLOCK);
+
+        SET @codigo = 'EXP-' + CAST(YEAR(GETDATE()) AS VARCHAR(4))
+                    + '-' + RIGHT('0000' + CAST(@secuencia AS VARCHAR(4)), 4);
 
         -- Insertar expediente
         INSERT INTO Expediente (codigo, id_ciudadano, id_tipo_tramite, estado)
         VALUES (@codigo, @id_ciudadano, @id_tipo_tramite, 'En Revision');
         SET @id_expediente = SCOPE_IDENTITY();
 
+        -- Registrar estado inicial en historial (NULL -> 'En Revision')
+        INSERT INTO HistorialEstado (id_expediente, estado_anterior, estado_nuevo)
+        VALUES (@id_expediente, NULL, 'En Revision');
+
         COMMIT TRAN;
 
-        -- Resultado
+        -- Resultado (mismas columnas que antes)
         SELECT e.id_expediente, e.codigo, c.dni, c.nombre AS ciudadano,
                t.nombre AS tipo_tramite, e.estado, e.fecha_registro
         FROM  Expediente  e
@@ -139,6 +162,81 @@ BEGIN
         DECLARE @state INT           = ERROR_STATE();
         RAISERROR(@msg, @sev, @state);
     END CATCH
+END
+GO
+
+-- 7. PROCEDIMIENTO: sp_CambiarEstado (NUEVO)
+IF OBJECT_ID('dbo.sp_CambiarEstado', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.sp_CambiarEstado;
+GO
+
+CREATE PROCEDURE dbo.sp_CambiarEstado
+    @codigo       VARCHAR(20),
+    @estado_nuevo VARCHAR(30)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @id_expediente   INT;
+    DECLARE @estado_anterior VARCHAR(30);
+
+    BEGIN TRY
+        BEGIN TRAN;
+
+        -- Buscar expediente con bloqueo
+        SELECT @id_expediente = e.id_expediente, @estado_anterior = e.estado
+        FROM   Expediente e WITH (UPDLOCK)
+        WHERE  e.codigo = @codigo;
+
+        IF @id_expediente IS NULL
+            RAISERROR('Expediente no encontrado: %s', 16, 1, @codigo);
+
+        -- Actualizar estado
+        UPDATE Expediente
+        SET    estado = @estado_nuevo
+        WHERE  id_expediente = @id_expediente;
+
+        -- Registrar en historial
+        INSERT INTO HistorialEstado (id_expediente, estado_anterior, estado_nuevo)
+        VALUES (@id_expediente, @estado_anterior, @estado_nuevo);
+
+        COMMIT TRAN;
+
+        -- Devolver fila actualizada con las mismas columnas
+        SELECT e.id_expediente, e.codigo, c.dni, c.nombre AS ciudadano,
+               t.nombre AS tipo_tramite, e.estado, e.fecha_registro
+        FROM  Expediente  e
+        JOIN  Ciudadano   c ON c.id_ciudadano    = e.id_ciudadano
+        JOIN  TipoTramite t ON t.id_tipo_tramite = e.id_tipo_tramite
+        WHERE e.id_expediente = @id_expediente;
+
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRAN;
+        DECLARE @msg   NVARCHAR(500) = ERROR_MESSAGE();
+        DECLARE @sev   INT           = ERROR_SEVERITY();
+        DECLARE @state INT           = ERROR_STATE();
+        RAISERROR(@msg, @sev, @state);
+    END CATCH
+END
+GO
+
+-- 8. PROCEDIMIENTO: sp_ListarTramites (NUEVO)
+IF OBJECT_ID('dbo.sp_ListarTramites', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.sp_ListarTramites;
+GO
+
+CREATE PROCEDURE dbo.sp_ListarTramites
+    @dni CHAR(8) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT e.id_expediente, e.codigo, c.dni, c.nombre AS ciudadano,
+           t.nombre AS tipo_tramite, e.estado, e.fecha_registro
+    FROM  Expediente  e
+    JOIN  Ciudadano   c ON c.id_ciudadano    = e.id_ciudadano
+    JOIN  TipoTramite t ON t.id_tipo_tramite = e.id_tipo_tramite
+    WHERE @dni IS NULL OR c.dni = @dni
+    ORDER BY e.fecha_registro DESC;
 END
 GO
 

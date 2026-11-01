@@ -56,6 +56,7 @@ public class Main extends JFrame {
             new JComboBox<>(new String[]{"reclamo", "solicitud"});
     private final JTextArea resultadoArea = new JTextArea();
     private final AtencionController controlador = new AtencionController();
+    private JLabel estadoLabel;
 
     /**
      * Vista: construye la ventana interactiva y sus controles Swing.
@@ -89,6 +90,14 @@ public class Main extends JFrame {
         contenido.add(crearFormulario());
         contenido.add(crearPanelResultados());
         add(contenido, BorderLayout.CENTER);
+
+        // Barra de estado inferior
+        JPanel barraEstado = new JPanel(new BorderLayout());
+        barraEstado.setBorder(BorderFactory.createEmptyBorder(4, 20, 8, 20));
+        estadoLabel = new JLabel("BD: " + controlador.estadoConexion());
+        estadoLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        barraEstado.add(estadoLabel, BorderLayout.WEST);
+        add(barraEstado, BorderLayout.SOUTH);
     }
 
     /**
@@ -133,6 +142,12 @@ public class Main extends JFrame {
         gbc.insets = new Insets(4, 5, 7, 5);
         formulario.add(limpiar, gbc);
 
+        JButton probar = new JButton("Probar conexion");
+        probar.addActionListener(event -> probarConexionEnPanel());
+        gbc.gridy = 7;
+        gbc.insets = new Insets(4, 5, 7, 5);
+        formulario.add(probar, gbc);
+
         return formulario;
     }
 
@@ -175,6 +190,28 @@ public class Main extends JFrame {
     }
 
     /**
+     * Vista: invoca ConexionSingleton e imprime el resultado en el panel de actividad.
+     * Singleton: demuestra el mensaje de reutilizacion al llamar getConexion() varias veces.
+     */
+    private void probarConexionEnPanel() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== Prueba de conexion Singleton ===\n");
+        try {
+            ConexionSingleton singleton = ConexionSingleton.getInstancia();
+            sb.append("Llamada 1: obteniendo conexion...\n");
+            singleton.getConexion();
+            sb.append("Llamada 2 (debe reutilizar):\n");
+            singleton.getConexion();
+            sb.append("Estado: ").append(controlador.estadoConexion()).append("\n");
+        } catch (Exception ex) {
+            sb.append("Error: ").append(ex.getMessage()).append("\n");
+            sb.append("Estado: ").append(controlador.estadoConexion()).append("\n");
+        }
+        resultadoArea.setText(sb.toString());
+        estadoLabel.setText("BD: " + controlador.estadoConexion());
+    }
+
+    /**
      * Vista: valida la entrada y solicita al controlador registrar el trámite.
      */
     private void registrarTramite() {
@@ -204,13 +241,14 @@ public class Main extends JFrame {
             return;
         }
 
-        controlador.atenderCiudadano(dni, nombre, correo, tramite);
-        resultadoArea.setText("TRÁMITE REGISTRADO CORRECTAMENTE\n\n"
+        Expediente exp = controlador.atenderCiudadano(dni, nombre, correo, tramite);
+        resultadoArea.setText("TRAMITE REGISTRADO CORRECTAMENTE\n\n"
                 + "Ciudadano: " + nombre + "\n"
                 + "DNI: " + dni + "\n"
                 + "Correo: " + correo + "\n"
-                + "Tipo: " + tramite.toUpperCase() + "\n\n"
-                + "El expediente fue creado y enviado a revisión.");
+                + "Tipo: " + tramite.toUpperCase() + "\n"
+                + "Expediente: " + exp.getCodigo() + "\n\n"
+                + "El expediente fue creado y enviado a revision.");
         JOptionPane.showMessageDialog(this,
                 "El trámite fue registrado correctamente.",
                 "Registro exitoso", JOptionPane.INFORMATION_MESSAGE);

@@ -11,6 +11,10 @@ public class Ciudadano {
 
     /**
      * Modelo: crea un ciudadano con sus datos básicos de contacto.
+     *
+     * @param dni    numero de documento de identidad (8 digitos)
+     * @param nombre nombre completo del ciudadano
+     * @param correo correo electronico de contacto
      */
     public Ciudadano(String dni, String nombre, String correo) {
         this.dni = dni;
@@ -19,7 +23,18 @@ public class Ciudadano {
     }
 
     /**
+     * Modelo: devuelve el DNI del ciudadano.
+     *
+     * @return dni numero de documento de identidad
+     */
+    public String getDni() {
+        return dni;
+    }
+
+    /**
      * Modelo: devuelve el nombre del ciudadano.
+     *
+     * @return nombre completo
      */
     public String getNombre() {
         return nombre;
@@ -27,9 +42,10 @@ public class Ciudadano {
 
     /**
      * Modelo: devuelve el correo usado por la Facade para notificar.
+     *
+     * @return correo electronico de contacto
      */
     public String getCorreo() {
         return correo;
     }
-
 }

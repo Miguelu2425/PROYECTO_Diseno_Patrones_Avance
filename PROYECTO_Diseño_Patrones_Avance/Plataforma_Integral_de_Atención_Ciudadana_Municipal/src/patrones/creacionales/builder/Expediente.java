@@ -8,6 +8,9 @@ public class Expediente {
     private String codigo;
     private String estado;
     private String tipoDocumento;
+    private String dni;
+    private String nombreCiudadano;
+    private String fechaRegistro;
 
     /**
      * Builder: construye el producto final usando los valores acumulados.
@@ -16,21 +19,51 @@ public class Expediente {
         this.codigo = builder.codigo;
         this.estado = builder.estado;
         this.tipoDocumento = builder.tipoDocumento;
+        this.dni = builder.dni;
+        this.nombreCiudadano = builder.nombreCiudadano;
+        this.fechaRegistro = builder.fechaRegistro;
+    }
+
+    public String getCodigo() {
+        return codigo;
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public String getTipoDocumento() {
+        return tipoDocumento;
+    }
+
+    public String getDni() {
+        return dni;
+    }
+
+    public String getNombreCiudadano() {
+        return nombreCiudadano;
+    }
+
+    public String getFechaRegistro() {
+        return fechaRegistro;
     }
 
     /**
-     * Builder: concentra la configuración opcional del expediente.
+     * Builder: concentra la configuracion opcional del expediente.
      */
     public static class ExpedienteBuilder {
 
         private String codigo;
         private String estado;
         private String tipoDocumento;
+        private String dni;
+        private String nombreCiudadano;
+        private String fechaRegistro;
 
         /**
-         * Builder: configura el código y devuelve el mismo constructor.
+         * Builder: configura el codigo y devuelve el mismo constructor.
          */
-            public ExpedienteBuilder setCodigo(String codigo) {
+        public ExpedienteBuilder setCodigo(String codigo) {
             this.codigo = codigo;
             return this;
         }
@@ -52,6 +85,30 @@ public class Expediente {
         }
 
         /**
+         * Builder: configura el DNI del ciudadano.
+         */
+        public ExpedienteBuilder setDni(String dni) {
+            this.dni = dni;
+            return this;
+        }
+
+        /**
+         * Builder: configura el nombre del ciudadano.
+         */
+        public ExpedienteBuilder setNombreCiudadano(String nombreCiudadano) {
+            this.nombreCiudadano = nombreCiudadano;
+            return this;
+        }
+
+        /**
+         * Builder: configura la fecha de registro.
+         */
+        public ExpedienteBuilder setFechaRegistro(String fechaRegistro) {
+            this.fechaRegistro = fechaRegistro;
+            return this;
+        }
+
+        /**
          * Builder: ensambla y devuelve un expediente completo.
          */
         public Expediente build() {
@@ -60,9 +117,20 @@ public class Expediente {
     }
 
     /**
-     * Producto Builder: muestra la información del expediente construido.
+     * Producto Builder: muestra la informacion del expediente construido.
      */
     public void mostrarDetalle() {
-        System.out.println("Expediente: " + codigo + "| Estado: " + estado);
+        StringBuilder sb = new StringBuilder();
+        sb.append("Expediente: ").append(codigo).append(" | Estado: ").append(estado);
+        if (tipoDocumento != null) {
+            sb.append(" | Tipo: ").append(tipoDocumento);
+        }
+        if (dni != null) {
+            sb.append(" | DNI: ").append(dni);
+        }
+        if (nombreCiudadano != null) {
+            sb.append(" | Ciudadano: ").append(nombreCiudadano);
+        }
+        System.out.println(sb.toString());
     }
 }
