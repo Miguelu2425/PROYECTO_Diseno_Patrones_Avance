@@ -21,12 +21,22 @@ public interface TramiteRepositorio {
 
     /**
      * Repositorio: cambia el estado de un expediente identificado por su codigo.
+     * Solo se permiten los estados oficiales: "En Revision", "Atendido", "Cerrado".
      *
      * @param codigo      codigo del expediente (ej. EXP-2026-0001)
-     * @param estadoNuevo nuevo estado a asignar
+     * @param estadoNuevo nuevo estado oficial a asignar
      * @return expediente actualizado
      */
     Expediente cambiarEstado(String codigo, String estadoNuevo);
+
+    /**
+     * Repositorio: busca un expediente por su codigo unico.
+     *
+     * @param codigo codigo del expediente
+     * @return expediente encontrado
+     * @throws RepositorioException si no se encuentra ningun expediente con ese codigo
+     */
+    Expediente buscarPorCodigo(String codigo);
 
     /**
      * Repositorio: lista expedientes; filtra por DNI solo si dniOpcional no es null.

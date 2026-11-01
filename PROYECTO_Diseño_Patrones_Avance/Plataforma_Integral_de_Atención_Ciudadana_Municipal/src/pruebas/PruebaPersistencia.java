@@ -2,6 +2,7 @@ package pruebas;
 
 import modelos.Ciudadano;
 import patrones.creacionales.builder.Expediente;
+import repositorios.RepositorioException;
 import repositorios.TramiteRepositorioMemoria;
 
 import java.util.List;
@@ -42,13 +43,22 @@ public class PruebaPersistencia {
         List<Expediente> todos = repo.listar(null);
         verificar("Listar todos devuelve 2 expedientes", todos.size() == 2);
 
-        // 4. Cambiar estado
-        Expediente actualizado = repo.cambiarEstado(e1.getCodigo(), "Aprobado");
-        verificar("Estado cambiado a Aprobado", "Aprobado".equals(actualizado.getEstado()));
+        // 4. Cambiar estado a estado oficial 'Atendido'
+        Expediente actualizado = repo.cambiarEstado(e1.getCodigo(), "Atendido");
+        verificar("Estado cambiado a Atendido", "Atendido".equals(actualizado.getEstado()));
 
         // 5. Verificar que el cambio persiste en la lista
         List<Expediente> listaDespues = repo.listar("12345678");
-        verificar("Estado persistido en lista", "Aprobado".equals(listaDespues.get(0).getEstado()));
+        verificar("Estado persistido en lista", "Atendido".equals(listaDespues.get(0).getEstado()));
+
+        // 6. Verificar que un estado no oficial lanza RepositorioException
+        boolean lanzoError = false;
+        try {
+            repo.cambiarEstado(e1.getCodigo(), "Aprobado");
+        } catch (RepositorioException ex) {
+            lanzoError = true;
+        }
+        verificar("Estado no oficial lanza RepositorioException", lanzoError);
 
         System.out.println("\n=== RESULTADO: " + ok + " OK, " + fallo + " FALLO ===");
     }

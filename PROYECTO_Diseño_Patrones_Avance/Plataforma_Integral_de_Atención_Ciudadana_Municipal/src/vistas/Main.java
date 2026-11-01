@@ -98,6 +98,7 @@ public class Main extends JFrame {
         estadoLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
         barraEstado.add(estadoLabel, BorderLayout.WEST);
         add(barraEstado, BorderLayout.SOUTH);
+        configurarRedireccionConsola();
     }
 
     /**
@@ -214,6 +215,46 @@ public class Main extends JFrame {
     /**
      * Vista: valida la entrada y solicita al controlador registrar el trámite.
      */
+    /**
+     * Vista: redirige System.out al panel "Actividad del sistema" para que
+     * los mensajes de los observadores, facade y consola aparezcan en pantalla
+     * ademas de seguir escribiendose en la consola real.
+     */
+    private void configurarRedireccionConsola() {
+        java.io.PrintStream originalOut = System.out;
+        java.io.OutputStream panelStream = new java.io.OutputStream() {
+            private final java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+
+            @Override
+            public synchronized void write(int b) {
+                originalOut.write(b);
+                buffer.write(b);
+                if (b == '\n') {
+                    volcarBuffer();
+                }
+            }
+
+            @Override
+            public synchronized void write(byte[] b, int off, int len) {
+                originalOut.write(b, off, len);
+                buffer.write(b, off, len);
+                for (int i = off; i < off + len; i++) {
+                    if (b[i] == '\n') {
+                        volcarBuffer();
+                        break;
+                    }
+                }
+            }
+
+            private void volcarBuffer() {
+                String texto = buffer.toString(java.nio.charset.StandardCharsets.UTF_8);
+                buffer.reset();
+                SwingUtilities.invokeLater(() -> resultadoArea.append(texto));
+            }
+        };
+        System.setOut(new java.io.PrintStream(panelStream, true, java.nio.charset.StandardCharsets.UTF_8));
+    }
+
     private void registrarTramite() {
         String dni = dniField.getText().trim();
         String nombre = nombreField.getText().trim();
@@ -241,14 +282,17 @@ public class Main extends JFrame {
             return;
         }
 
+        resultadoArea.setText("--- Registrando tramite en Mesa de Partes ---\n\n");
         Expediente exp = controlador.atenderCiudadano(dni, nombre, correo, tramite);
-        resultadoArea.setText("TRAMITE REGISTRADO CORRECTAMENTE\n\n"
-                + "Ciudadano: " + nombre + "\n"
-                + "DNI: " + dni + "\n"
-                + "Correo: " + correo + "\n"
-                + "Tipo: " + tramite.toUpperCase() + "\n"
-                + "Expediente: " + exp.getCodigo() + "\n\n"
-                + "El expediente fue creado y enviado a revision.");
+        resultadoArea.append("\n========================================\n"
+                + "TRAMITE REGISTRADO CORRECTAMENTE\n"
+                + "Expediente: " + exp.getCodigo() + "\n"
+                + "Ciudadano:  " + nombre + " (DNI: " + dni + ")\n"
+                + "Correo:     " + correo + "\n"
+                + "Tipo:       " + tramite.toUpperCase() + "\n"
+                + "Estado:     " + exp.getEstado() + "\n"
+                + "========================================\n");
+        estadoLabel.setText("BD: " + controlador.estadoConexion());
         JOptionPane.showMessageDialog(this,
                 "El trámite fue registrado correctamente.",
                 "Registro exitoso", JOptionPane.INFORMATION_MESSAGE);

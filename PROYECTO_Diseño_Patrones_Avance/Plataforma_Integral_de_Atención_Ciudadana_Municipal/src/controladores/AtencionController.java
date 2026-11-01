@@ -16,21 +16,29 @@ public class AtencionController {
 
     /**
      * Controlador: inicializa la Facade que coordina el caso de uso.
-     * La Facade usara RepositorioFactory para elegir BD o memoria automaticamente.
      */
     public AtencionController() {
         this.mesaPartes = new MesaPartesFacade();
     }
 
     /**
-     * Controlador: recibe la solicitud de la vista, crea el ciudadano
-     * y delega el registro completo a la Facade.
+     * Controlador: recibe la solicitud de la vista y delega el registro a la Facade.
      *
      * @return expediente creado con codigo unico real
      */
     public Expediente atenderCiudadano(String dni, String nombre, String correo, String tramite) {
         Ciudadano ciudadano = new Ciudadano(dni, nombre, correo);
         return mesaPartes.registrarNuevoTramite(ciudadano, tramite);
+    }
+
+    /**
+     * Patron State y Observer: avanza el estado del tramite delegando en la Facade.
+     *
+     * @param codigo codigo unico del expediente
+     * @return expediente actualizado
+     */
+    public Expediente avanzarEstado(String codigo) {
+        return mesaPartes.avanzarEstado(codigo);
     }
 
     /**
@@ -46,8 +54,7 @@ public class AtencionController {
     /**
      * Controlador: informa el origen del repositorio activo para mostrarlo en la vista.
      *
-     * @return texto "conectado a SQL Server mediante ConexionSingleton" o
-     *         "modo memoria (sin conexion)"
+     * @return descripcion del origen de persistencia
      */
     public String estadoConexion() {
         return mesaPartes.descripcionRepositorio();

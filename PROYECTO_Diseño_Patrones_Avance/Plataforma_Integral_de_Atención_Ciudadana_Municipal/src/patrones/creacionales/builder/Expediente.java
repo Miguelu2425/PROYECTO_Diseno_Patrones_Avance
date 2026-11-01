@@ -2,15 +2,17 @@ package patrones.creacionales.builder;
 
 /**
  * Builder: representa un expediente construido paso a paso.
+ * Producto final del patron Builder aplicado al tramite ciudadano.
  */
 public class Expediente {
 
-    private String codigo;
-    private String estado;
-    private String tipoDocumento;
-    private String dni;
-    private String nombreCiudadano;
-    private String fechaRegistro;
+    private final String codigo;
+    private final String estado;
+    private final String tipoDocumento;
+    private final String dni;
+    private final String nombreCiudadano;
+    private final String correo;
+    private final String fechaRegistro;
 
     /**
      * Builder: construye el producto final usando los valores acumulados.
@@ -21,6 +23,7 @@ public class Expediente {
         this.tipoDocumento = builder.tipoDocumento;
         this.dni = builder.dni;
         this.nombreCiudadano = builder.nombreCiudadano;
+        this.correo = builder.correo;
         this.fechaRegistro = builder.fechaRegistro;
     }
 
@@ -44,6 +47,10 @@ public class Expediente {
         return nombreCiudadano;
     }
 
+    public String getCorreo() {
+        return correo;
+    }
+
     public String getFechaRegistro() {
         return fechaRegistro;
     }
@@ -58,59 +65,44 @@ public class Expediente {
         private String tipoDocumento;
         private String dni;
         private String nombreCiudadano;
+        private String correo;
         private String fechaRegistro;
 
-        /**
-         * Builder: configura el codigo y devuelve el mismo constructor.
-         */
         public ExpedienteBuilder setCodigo(String codigo) {
             this.codigo = codigo;
             return this;
         }
 
-        /**
-         * Builder: configura el estado y devuelve el mismo constructor.
-         */
         public ExpedienteBuilder setEstado(String estado) {
             this.estado = estado;
             return this;
         }
 
-        /**
-         * Builder: configura el tipo documental y devuelve el mismo constructor.
-         */
         public ExpedienteBuilder setTipoDocumento(String tipoDocumento) {
             this.tipoDocumento = tipoDocumento;
             return this;
         }
 
-        /**
-         * Builder: configura el DNI del ciudadano.
-         */
         public ExpedienteBuilder setDni(String dni) {
             this.dni = dni;
             return this;
         }
 
-        /**
-         * Builder: configura el nombre del ciudadano.
-         */
         public ExpedienteBuilder setNombreCiudadano(String nombreCiudadano) {
             this.nombreCiudadano = nombreCiudadano;
             return this;
         }
 
-        /**
-         * Builder: configura la fecha de registro.
-         */
+        public ExpedienteBuilder setCorreo(String correo) {
+            this.correo = correo;
+            return this;
+        }
+
         public ExpedienteBuilder setFechaRegistro(String fechaRegistro) {
             this.fechaRegistro = fechaRegistro;
             return this;
         }
 
-        /**
-         * Builder: ensambla y devuelve un expediente completo.
-         */
         public Expediente build() {
             return new Expediente(this);
         }

@@ -1,7 +1,7 @@
-﻿-- ============================================================
+-- ============================================================
 -- Script T-SQL  |  Base de datos: Municipalidad
 -- Proyecto      : Plataforma Integral de Atencion Ciudadana Municipal
--- Curso         : Diseno de Patrones - Semana 11
+-- Curso         : Diseno de Patrones - Semana 12
 -- IDEMPOTENTE: se puede ejecutar varias veces sin error.
 -- ============================================================
 
@@ -75,7 +75,7 @@ BEGIN
 END
 GO
 
--- 5. TABLA: HistorialEstado (NUEVA)
+-- 5. TABLA: HistorialEstado
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'HistorialEstado')
 BEGIN
     CREATE TABLE HistorialEstado (
@@ -91,7 +91,7 @@ BEGIN
 END
 GO
 
--- 6. PROCEDIMIENTO: sp_RegistrarTramite (MODIFICADO)
+-- 6. PROCEDIMIENTO: sp_RegistrarTramite
 IF OBJECT_ID('dbo.sp_RegistrarTramite', 'P') IS NOT NULL
     DROP PROCEDURE dbo.sp_RegistrarTramite;
 GO
@@ -121,6 +121,13 @@ BEGIN
             VALUES (@dni, @nombre, @correo);
             SET @id_ciudadano = SCOPE_IDENTITY();
         END
+        ELSE
+        BEGIN
+            -- Actualizar correo si cambio
+            UPDATE Ciudadano
+            SET nombre = @nombre, correo = @correo
+            WHERE id_ciudadano = @id_ciudadano;
+        END
 
         -- Resolver tipo de tramite (capitalizado)
         SELECT @id_tipo_tramite = id_tipo_tramite FROM TipoTramite WHERE nombre = @tipo_tramite;
@@ -135,7 +142,7 @@ BEGIN
         SET @codigo = 'EXP-' + CAST(YEAR(GETDATE()) AS VARCHAR(4))
                     + '-' + RIGHT('0000' + CAST(@secuencia AS VARCHAR(4)), 4);
 
-        -- Insertar expediente
+        -- Insertar expediente en estado inicial 'En Revision'
         INSERT INTO Expediente (codigo, id_ciudadano, id_tipo_tramite, estado)
         VALUES (@codigo, @id_ciudadano, @id_tipo_tramite, 'En Revision');
         SET @id_expediente = SCOPE_IDENTITY();
@@ -146,8 +153,9 @@ BEGIN
 
         COMMIT TRAN;
 
-        -- Resultado (mismas columnas que antes)
+        -- Resultado con columna correo incluida
         SELECT e.id_expediente, e.codigo, c.dni, c.nombre AS ciudadano,
+               c.correo AS correo,
                t.nombre AS tipo_tramite, e.estado, e.fecha_registro
         FROM  Expediente  e
         JOIN  Ciudadano   c ON c.id_ciudadano    = e.id_ciudadano
@@ -165,7 +173,7 @@ BEGIN
 END
 GO
 
--- 7. PROCEDIMIENTO: sp_CambiarEstado (NUEVO)
+-- 7. PROCEDIMIENTO: sp_CambiarEstado (Valida estados oficiales)
 IF OBJECT_ID('dbo.sp_CambiarEstado', 'P') IS NOT NULL
     DROP PROCEDURE dbo.sp_CambiarEstado;
 GO
@@ -178,6 +186,13 @@ BEGIN
     SET NOCOUNT ON;
     DECLARE @id_expediente   INT;
     DECLARE @estado_anterior VARCHAR(30);
+
+    -- Validacion de estados oficiales permitidos
+    IF @estado_nuevo NOT IN ('En Revision', 'Atendido', 'Cerrado')
+    BEGIN
+        RAISERROR('Estado no valido: %s. Solo se permiten: En Revision, Atendido, Cerrado.', 16, 1, @estado_nuevo);
+        RETURN;
+    END
 
     BEGIN TRY
         BEGIN TRAN;
@@ -201,8 +216,9 @@ BEGIN
 
         COMMIT TRAN;
 
-        -- Devolver fila actualizada con las mismas columnas
+        -- Devolver fila actualizada con columna correo
         SELECT e.id_expediente, e.codigo, c.dni, c.nombre AS ciudadano,
+               c.correo AS correo,
                t.nombre AS tipo_tramite, e.estado, e.fecha_registro
         FROM  Expediente  e
         JOIN  Ciudadano   c ON c.id_ciudadano    = e.id_ciudadano
@@ -220,7 +236,7 @@ BEGIN
 END
 GO
 
--- 8. PROCEDIMIENTO: sp_ListarTramites (NUEVO)
+-- 8. PROCEDIMIENTO: sp_ListarTramites
 IF OBJECT_ID('dbo.sp_ListarTramites', 'P') IS NOT NULL
     DROP PROCEDURE dbo.sp_ListarTramites;
 GO
@@ -231,6 +247,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
     SELECT e.id_expediente, e.codigo, c.dni, c.nombre AS ciudadano,
+           c.correo AS correo,
            t.nombre AS tipo_tramite, e.estado, e.fecha_registro
     FROM  Expediente  e
     JOIN  Ciudadano   c ON c.id_ciudadano    = e.id_ciudadano
@@ -240,5 +257,25 @@ BEGIN
 END
 GO
 
-PRINT 'Script ejecutado correctamente.';
+-- 9. PROCEDIMIENTO: sp_ObtenerTramite (NUEVO)
+IF OBJECT_ID('dbo.sp_ObtenerTramite', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.sp_ObtenerTramite;
+GO
+
+CREATE PROCEDURE dbo.sp_ObtenerTramite
+    @codigo VARCHAR(20)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT e.id_expediente, e.codigo, c.dni, c.nombre AS ciudadano,
+           c.correo AS correo,
+           t.nombre AS tipo_tramite, e.estado, e.fecha_registro
+    FROM  Expediente  e
+    JOIN  Ciudadano   c ON c.id_ciudadano    = e.id_ciudadano
+    JOIN  TipoTramite t ON t.id_tipo_tramite = e.id_tipo_tramite
+    WHERE e.codigo = @codigo;
+END
+GO
+
+PRINT 'Script municipalidad actualizado correctamente.';
 GO
