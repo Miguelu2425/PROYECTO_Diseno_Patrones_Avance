@@ -24,3 +24,4 @@ public interface Comando {
      */
     String getDescripcion();
 }
+

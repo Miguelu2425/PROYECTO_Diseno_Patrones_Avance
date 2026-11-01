@@ -1,7 +1,11 @@
 package controladores;
 
 import modelos.Ciudadano;
+import patrones.comportamiento.state.EstadoTramite;
+import patrones.comportamiento.state.EstadosTramite;
 import patrones.creacionales.builder.Expediente;
+import patrones.creacionales.singleton.ConexionSingleton;
+import patrones.creacionales.singleton.ConfiguracionPlataforma;
 import patrones.estructurales.facade.MesaPartesFacade;
 
 import java.util.List;
@@ -9,16 +13,27 @@ import java.util.List;
 /**
  * Controlador MVC: conecta la vista con la Facade de mesa de partes.
  * GRASP Controlador: es el primer objeto que recibe las solicitudes de la vista.
+ * Desacopla completamente las vistas de los patrones internos (State, Observer, Command, Memento, Singleton).
  */
 public class AtencionController {
 
     private final MesaPartesFacade mesaPartes;
 
     /**
-     * Controlador: inicializa la Facade que coordina el caso de uso.
+     * Controlador: inicializa la Facade por defecto que coordina el caso de uso.
      */
     public AtencionController() {
-        this.mesaPartes = new MesaPartesFacade();
+        this(new MesaPartesFacade());
+    }
+
+    /**
+     * Controlador: constructor con inyección de Facade para pruebas y personalización.
+     * GRASP Controlador / Polimorfismo.
+     *
+     * @param mesaPartes fachada de mesa de partes
+     */
+    public AtencionController(MesaPartesFacade mesaPartes) {
+        this.mesaPartes = mesaPartes;
     }
 
     /**
@@ -88,11 +103,94 @@ public class AtencionController {
     }
 
     /**
-     * Patron Command: devuelve el historial de descripciones de acciones pendientes de deshacer.
+     * Controlador: devuelve el historial de descripciones de acciones pendientes de deshacer.
      *
      * @return lista de descripciones
      */
     public List<String> historialAcciones() {
         return mesaPartes.historialAcciones();
+    }
+
+    /**
+     * GRASP Alta Cohesión: devuelve la descripción detallada del estado oficial.
+     * Evita que la vista conozca o importe la jerarquía de patrones.comportamiento.state.
+     *
+     * @param nombreEstado nombre oficial del estado ("En Revision", "Atendido", "Cerrado")
+     * @return descripción legible del estado
+     */
+    public String descripcionEstado(String nombreEstado) {
+        if (nombreEstado == null) return "Estado no especificado";
+        try {
+            return EstadosTramite.desdeNombre(nombreEstado).getDescripcion();
+        } catch (Exception ex) {
+            return "Estado desconocido: " + nombreEstado;
+        }
+    }
+
+    /**
+     * GRASP Alta Cohesión: devuelve el nombre del siguiente estado según el patrón State,
+     * o "-" si el estado actual es final (Cerrado).
+     *
+     * @param nombreEstado nombre oficial del estado actual
+     * @return nombre del siguiente estado o "-" si no avanza más
+     */
+    public String siguienteEstado(String nombreEstado) {
+        if (nombreEstado == null) return "-";
+        try {
+            EstadoTramite estado = EstadosTramite.desdeNombre(nombreEstado);
+            if (estado.esFinal()) {
+                return "-";
+            }
+            return estado.siguiente().getNombre();
+        } catch (Exception ex) {
+            return "-";
+        }
+    }
+
+    /**
+     * GRASP Alta Cohesión: mapea el estado oficial a su término de situación para la interfaz:
+     * "En espera" para "En Revision", "Atendido" para "Atendido", "Finalizado" para "Cerrado".
+     *
+     * @param nombreEstado nombre oficial del estado
+     * @return texto de situación
+     */
+    public String situacionEstado(String nombreEstado) {
+        if (nombreEstado == null) return "Desconocido";
+        switch (nombreEstado) {
+            case "En Revision":
+                return "En espera";
+            case "Atendido":
+                return "Atendido";
+            case "Cerrado":
+                return "Finalizado";
+            default:
+                return nombreEstado;
+        }
+    }
+
+    /**
+     * Patron Singleton: obtiene el nombre del municipio desde ConfiguracionPlataforma.
+     *
+     * @return nombre del municipio configurado
+     */
+    public String nombreMunicipio() {
+        return ConfiguracionPlataforma.getInstancia().getNombreMunicipio();
+    }
+
+    /**
+     * Patron Singleton: realiza dos llamadas consecutivas a ConexionSingleton para evidenciar
+     * la creación y posterior reutilización de la única instancia de conexión.
+     *
+     * @return texto informativo del estado de la conexión sin exponer credenciales
+     */
+    public String probarConexion() {
+        try {
+            ConexionSingleton singleton = ConexionSingleton.getInstancia();
+            singleton.getConexion(); // Primera llamada: crea o reutiliza
+            singleton.getConexion(); // Segunda llamada: reutiliza
+            return "BD conectada: " + estadoConexion();
+        } catch (Exception ex) {
+            return "Sin conexion: modo memoria";
+        }
     }
 }
