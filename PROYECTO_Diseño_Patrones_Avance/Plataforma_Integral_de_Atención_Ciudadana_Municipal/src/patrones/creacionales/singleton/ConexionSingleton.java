@@ -10,6 +10,8 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -24,6 +26,9 @@ public final class ConexionSingleton {
     private Connection conexion;
 
     private final Properties archivo = new Properties();
+    private Path rutaConfigEncontrada;
+    private final List<Path> rutasProbadas = new ArrayList<>();
+
     private final String url;
     private final String usuario;
     private final String clave;
@@ -38,11 +43,15 @@ public final class ConexionSingleton {
         String servidor   = obtenerConfiguracion("DB_SERVER", "localhost");
         String puerto     = obtenerConfiguracion("DB_PORT",   "1433");
         String baseDatos  = obtenerConfiguracion("DB_NAME",   "Municipalidad");
+        String encrypt    = obtenerConfiguracion("DB_ENCRYPT", "true");
+        String trustCert  = obtenerConfiguracion("DB_TRUST_SERVER_CERTIFICATE", "true");
 
         this.url = "jdbc:sqlserver://" + servidor + ":" + puerto
                 + ";databaseName=" + baseDatos
-                + ";encrypt=true"
-                + ";trustServerCertificate=true";
+                + ";encrypt=" + encrypt
+                + ";trustServerCertificate=" + trustCert
+                + ";loginTimeout=5";
+
         this.usuario = obtenerConfiguracion("DB_USER",     "");
         this.clave   = obtenerConfiguracion("DB_PASSWORD", "");
     }
@@ -50,7 +59,6 @@ public final class ConexionSingleton {
     /**
      * Singleton: devuelve la instancia unica de conexion de forma segura
      * cuando la aplicacion es utilizada por varios hilos.
-     * Imprime en consola al crear la instancia por primera vez.
      *
      * @return instancia unica de ConexionSingleton
      */
@@ -68,7 +76,6 @@ public final class ConexionSingleton {
 
     /**
      * Singleton: abre la conexion una sola vez y reutiliza una conexion activa.
-     * Imprime en consola cuando reutiliza una conexion ya abierta.
      *
      * @return conexion a la base de datos Municipalidad
      * @throws SQLException si faltan credenciales o SQL Server no esta disponible
@@ -96,17 +103,30 @@ public final class ConexionSingleton {
     }
 
     /**
-     * Singleton: lee el archivo config.properties (UTF-8) si existe en la
-     * carpeta de trabajo, para no escribir credenciales en el codigo.
+     * Singleton: busca config.properties en user.dir y en hasta 3 carpetas
+     * superiores para que funcione tanto desde la raiz como desde subdirectorios de IDEs.
      */
     private void cargarArchivo() {
-        Path ruta = Paths.get(ARCHIVO_CONFIG);
-        if (Files.exists(ruta)) {
+        Path actual = Paths.get("").toAbsolutePath();
+        Path dir = actual;
+        for (int i = 0; i <= 3 && dir != null; i++) {
+            Path candidata = dir.resolve(ARCHIVO_CONFIG);
+            rutasProbadas.add(candidata);
+            if (Files.exists(candidata)) {
+                rutaConfigEncontrada = candidata;
+                break;
+            }
+            dir = dir.getParent();
+        }
+
+        if (rutaConfigEncontrada != null) {
             try (Reader lector = new InputStreamReader(
-                    Files.newInputStream(ruta), StandardCharsets.UTF_8)) {
+                    Files.newInputStream(rutaConfigEncontrada), StandardCharsets.UTF_8)) {
                 archivo.load(lector);
+                System.out.println("Singleton: config.properties encontrado en: "
+                        + rutaConfigEncontrada.toAbsolutePath());
             } catch (IOException e) {
-                System.err.println("No se pudo leer " + ARCHIVO_CONFIG
+                System.err.println("No se pudo leer " + rutaConfigEncontrada
                         + ": " + e.getMessage());
             }
         }
@@ -115,12 +135,8 @@ public final class ConexionSingleton {
     /**
      * Singleton: busca un valor en este orden: propiedad del sistema,
      * variable de entorno, config.properties y valor predeterminado.
-     *
-     * @param nombre           nombre de la clave de configuracion
-     * @param valorPorDefecto  valor a usar si no se encuentra la clave
-     * @return valor de configuracion encontrado o valor por defecto
      */
-    private String obtenerConfiguracion(String nombre, String valorPorDefecto) {
+    public String obtenerConfiguracion(String nombre, String valorPorDefecto) {
         String valor = System.getProperty(nombre);
         if (valor == null || valor.trim().isEmpty()) {
             valor = System.getenv(nombre);
@@ -135,9 +151,30 @@ public final class ConexionSingleton {
     }
 
     /**
+     * Devuelve la URL JDBC final sin incluir credenciales.
+     */
+    public String getUrlSinCredenciales() {
+        return url;
+    }
+
+    public Path getRutaConfigEncontrada() {
+        return rutaConfigEncontrada;
+    }
+
+    public List<Path> getRutasProbadas() {
+        return new ArrayList<>(rutasProbadas);
+    }
+
+    public boolean isUserDefinido() {
+        return !usuario.isEmpty();
+    }
+
+    public boolean isPasswordDefinido() {
+        return !clave.isEmpty();
+    }
+
+    /**
      * Singleton: evita intentar una conexion silenciosa sin usuario o clave.
-     *
-     * @throws SQLException si no se configuraron las credenciales
      */
     private void validarCredenciales() throws SQLException {
         if (usuario.isEmpty() || clave.isEmpty()) {
