@@ -19,7 +19,6 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
@@ -35,11 +34,12 @@ import java.util.Map;
  * Estructura:
  *  - Encabezado institucional azul marino (#032D66).
  *  - Barra de secciones tipo pestaña (REGISTRO | SEGUIMIENTO | SISTEMA).
- *  - Panel izquierdo con las opciones de la sección activa.
+ *  - Panel izquierdo con las opciones de la sección activa (ancho adaptado a 230 px).
  *  - Panel central dinámico con CardLayout para la opción elegida.
- *  - Panel lateral derecho "Actividad del sistema" con botón "Limpiar".
+ *  - Panel lateral derecho "Actividad del sistema" (ancho 380 px) con botón "Limpiar".
  *  - Barra inferior con el estado de conexión de la base de datos.
  * Patrón MVC: delega todas las acciones en AtencionController.
+ * GRASP Alta Cohesión: estilos centralizados en EstiloVista.
  */
 public class Main extends JFrame {
 
@@ -87,6 +87,7 @@ public class Main extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1200, 720);
         setMinimumSize(new Dimension(1000, 640));
+        setResizable(true);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
@@ -120,12 +121,12 @@ public class Main extends JFrame {
 
         JLabel titulo = new JLabel("Plataforma Integral de Atención Ciudadana Municipal");
         titulo.setForeground(Color.WHITE);
-        titulo.setFont(new Font("SansSerif", Font.BOLD, 21));
+        titulo.setFont(EstiloVista.FUENTE_ENCABEZADO);
         panelTitulos.add(titulo, BorderLayout.NORTH);
 
         JLabel subtitulo = new JLabel(controlador.nombreMunicipio());
         subtitulo.setForeground(new Color(220, 235, 250));
-        subtitulo.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        subtitulo.setFont(EstiloVista.FUENTE_BASE);
         panelTitulos.add(subtitulo, BorderLayout.SOUTH);
 
         contenedorNorte.add(panelTitulos, BorderLayout.NORTH);
@@ -143,9 +144,9 @@ public class Main extends JFrame {
         cuerpo.setBackground(COLOR_FONDO_CLARO);
         cuerpo.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
 
-        // Panel Izquierdo: Lista de opciones de la sección
+        // Panel Izquierdo: Lista de opciones de la sección (ancho 230 px para evitar truncamiento)
         JPanel panelIzquierdo = new JPanel(new BorderLayout());
-        panelIzquierdo.setPreferredSize(new Dimension(220, 0));
+        panelIzquierdo.setPreferredSize(new Dimension(230, 0));
         panelIzquierdo.setBackground(Color.WHITE);
         panelIzquierdo.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(COLOR_BORDE, 1, true),
@@ -153,12 +154,12 @@ public class Main extends JFrame {
         ));
 
         JLabel lblOpciones = new JLabel("Menú de opciones");
-        lblOpciones.setFont(new Font("SansSerif", Font.BOLD, 14));
+        lblOpciones.setFont(EstiloVista.FUENTE_NEGRITA);
         lblOpciones.setForeground(COLOR_AZUL_MARINO);
         lblOpciones.setBorder(BorderFactory.createEmptyBorder(4, 6, 10, 6));
         panelIzquierdo.add(lblOpciones, BorderLayout.NORTH);
 
-        listaOpciones.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        listaOpciones.setFont(EstiloVista.FUENTE_BASE);
         listaOpciones.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         listaOpciones.setFixedCellHeight(32);
         listaOpciones.setSelectionBackground(COLOR_FONDO_CLARO);
@@ -190,7 +191,7 @@ public class Main extends JFrame {
 
     private JPanel crearPanelActividad() {
         JPanel panel = new JPanel(new BorderLayout(0, 8));
-        panel.setPreferredSize(new Dimension(360, 0));
+        panel.setPreferredSize(new Dimension(380, 0));
         panel.setBackground(Color.WHITE);
         panel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(COLOR_BORDE, 1, true),
@@ -202,15 +203,16 @@ public class Main extends JFrame {
         cabeceraActividad.setBackground(Color.WHITE);
 
         JLabel titulo = new JLabel("Actividad del sistema");
-        titulo.setFont(new Font("SansSerif", Font.BOLD, 15));
+        titulo.setFont(EstiloVista.FUENTE_NEGRITA);
         titulo.setForeground(COLOR_AZUL_MARINO);
         cabeceraActividad.add(titulo, BorderLayout.WEST);
 
         JButton btnLimpiar = new JButton("Limpiar");
-        btnLimpiar.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        btnLimpiar.setFont(EstiloVista.FUENTE_BASE);
         btnLimpiar.setBackground(new Color(240, 244, 250));
         btnLimpiar.setFocusPainted(false);
         btnLimpiar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnLimpiar.setMargin(new java.awt.Insets(3, 8, 3, 8));
         btnLimpiar.addActionListener(e -> resultadoArea.setText(""));
         cabeceraActividad.add(btnLimpiar, BorderLayout.EAST);
 
@@ -219,7 +221,7 @@ public class Main extends JFrame {
         resultadoArea.setEditable(false);
         resultadoArea.setLineWrap(true);
         resultadoArea.setWrapStyleWord(true);
-        resultadoArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        resultadoArea.setFont(EstiloVista.FUENTE_MONO);
         resultadoArea.setBackground(new Color(250, 252, 255));
 
         JScrollPane scrollArea = new JScrollPane(resultadoArea);
@@ -237,7 +239,7 @@ public class Main extends JFrame {
                 BorderFactory.createEmptyBorder(6, 20, 6, 20)
         ));
 
-        estadoLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        estadoLabel.setFont(EstiloVista.FUENTE_BASE);
         estadoLabel.setForeground(new Color(70, 85, 100));
         actualizarEstadoBD();
         barra.add(estadoLabel, BorderLayout.WEST);
@@ -275,7 +277,7 @@ public class Main extends JFrame {
         // Construir botones de sección en la barra superior
         for (String seccion : opcionesPorSeccion.keySet()) {
             JButton btnSeccion = new JButton(seccion);
-            btnSeccion.setFont(new Font("SansSerif", Font.BOLD, 13));
+            btnSeccion.setFont(EstiloVista.FUENTE_NEGRITA);
             btnSeccion.setForeground(Color.WHITE);
             btnSeccion.setFocusPainted(false);
             btnSeccion.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -353,14 +355,18 @@ public class Main extends JFrame {
     }
 
     private void mostrarMensajeBienvenida() {
-        resultadoArea.setText("===========================================================\n"
-                + " PLATAFORMA INTEGRAL DE ATENCIÓN CIUDADANA MUNICIPAL\n"
+        resultadoArea.setText("====================================\n"
+                + " PLATAFORMA INTEGRAL DE ATENCIÓN\n"
+                + " CIUDADANA MUNICIPAL\n"
                 + " " + controlador.nombreMunicipio() + "\n"
-                + " Estado de persistencia: " + controlador.estadoConexion() + "\n"
-                + "===========================================================\n"
-                + "Bienvenido al sistema. Utilice el menú superior y lateral\n"
-                + "para registrar trámites, consultar solicitudes y verificar\n"
-                + "la actividad del sistema en tiempo real.\n\n");
+                + " Estado de persistencia:\n"
+                + " " + controlador.estadoConexion() + "\n"
+                + "====================================\n"
+                + "Bienvenido al sistema. Utilice el\n"
+                + "menú superior y lateral para registrar\n"
+                + "trámites, consultar solicitudes y\n"
+                + "verificar la actividad del sistema en\n"
+                + "tiempo real.\n\n");
     }
 
     /**

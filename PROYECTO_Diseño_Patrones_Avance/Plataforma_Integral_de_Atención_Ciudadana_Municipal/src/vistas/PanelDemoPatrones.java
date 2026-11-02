@@ -9,7 +9,6 @@ import javax.swing.JPanel;
 import javax.swing.SwingWorker;
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -17,6 +16,7 @@ import java.awt.Insets;
 /**
  * Vista Swing: panel para disparar la demostración técnica de todos los patrones implementados.
  * GRASP Alta Cohesión: aísla la invocación de las pruebas técnicas sin ensuciar la ventana principal.
+ * Adaptación visual: utiliza EstiloVista para tipografías unificadas.
  */
 public class PanelDemoPatrones extends JPanel {
 
@@ -48,7 +48,7 @@ public class PanelDemoPatrones extends JPanel {
 
         // Título
         JLabel titulo = new JLabel("Demostración Integral de Patrones del Curso");
-        titulo.setFont(new Font("SansSerif", Font.BOLD, 17));
+        titulo.setFont(EstiloVista.FUENTE_TITULO);
         titulo.setForeground(new Color(3, 45, 102));
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -60,17 +60,18 @@ public class PanelDemoPatrones extends JPanel {
                 + "• <b>Estructurales:</b> Adapter, Bridge, Composite, Decorator, Facade, Proxy.<br>"
                 + "• <b>Comportamiento:</b> State, Observer, Command, Memento.<br><br>"
                 + "La traza completa de ejecución se imprimirá en el panel <i>Actividad del sistema</i>.</html>");
-        descripcion.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        descripcion.setFont(EstiloVista.FUENTE_BASE);
         descripcion.setForeground(new Color(50, 65, 80));
         gbc.gridy = 1;
         tarjeta.add(descripcion, gbc);
 
         // Botón Ejecutar
-        btnEjecutar.setFont(new Font("SansSerif", Font.BOLD, 14));
+        btnEjecutar.setFont(EstiloVista.FUENTE_NEGRITA);
         btnEjecutar.setBackground(COLOR_PRIMARIO);
         btnEjecutar.setForeground(Color.WHITE);
         btnEjecutar.setFocusPainted(false);
         btnEjecutar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnEjecutar.setMargin(new Insets(6, 14, 6, 14));
         btnEjecutar.addActionListener(e -> ejecutarDemo());
 
         gbc.gridy = 2;
@@ -78,7 +79,7 @@ public class PanelDemoPatrones extends JPanel {
         tarjeta.add(btnEjecutar, gbc);
 
         // Estado
-        lblEstadoDemo.setFont(new Font("SansSerif", Font.ITALIC, 12));
+        lblEstadoDemo.setFont(EstiloVista.FUENTE_CURSIVA);
         lblEstadoDemo.setForeground(new Color(100, 115, 130));
         gbc.gridy = 3;
         gbc.insets = new Insets(0, 8, 5, 8);
@@ -113,4 +114,3 @@ public class PanelDemoPatrones extends JPanel {
         worker.execute();
     }
 }
-

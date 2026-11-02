@@ -6,9 +6,11 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -19,6 +21,7 @@ import java.time.format.DateTimeFormatter;
  * Vista Swing: panel de diagnóstico y demostración del patrón Singleton.
  * Muestra el municipio configurado en ConfiguracionPlataforma y el estado de ConexionSingleton.
  * MVC: se comunica exclusivamente con AtencionController.
+ * GRASP Alta Cohesión: adaptación visual y textos multilínea usando EstiloVista.
  */
 public class PanelSistema extends JPanel {
 
@@ -30,24 +33,24 @@ public class PanelSistema extends JPanel {
     private final JLabel lblUltimaComprobacion = new JLabel("Última comprobación: --:--:--");
 
     private static final Color COLOR_PRIMARIO = new Color(0, 74, 173); // #004AAD
-    private static final Font FUENTE_TITULO = new Font("SansSerif", Font.BOLD, 17);
-    private static final Font FUENTE_LABEL = new Font("SansSerif", Font.BOLD, 13);
-    private static final Font FUENTE_VALOR = new Font("SansSerif", Font.PLAIN, 13);
     private static final DateTimeFormatter FMT_HORA = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     public PanelSistema(AtencionController controlador, Runnable alComprobar) {
         this.controlador = controlador;
         this.alComprobar = alComprobar;
 
-        setLayout(new GridBagLayout());
+        setLayout(new BorderLayout());
         setBackground(new Color(245, 248, 253));
-        setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 25));
 
         inicializarComponentes();
         actualizarDatos();
     }
 
     private void inicializarComponentes() {
+        JPanel panelContenedor = new JPanel(new GridBagLayout());
+        panelContenedor.setBackground(new Color(245, 248, 253));
+        panelContenedor.setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 25));
+
         JPanel tarjeta = new JPanel(new GridBagLayout());
         tarjeta.setBackground(Color.WHITE);
         tarjeta.setBorder(BorderFactory.createCompoundBorder(
@@ -62,7 +65,7 @@ public class PanelSistema extends JPanel {
 
         // Título
         JLabel titulo = new JLabel("Configuración y Conexión (Patrón Singleton)");
-        titulo.setFont(FUENTE_TITULO);
+        titulo.setFont(EstiloVista.FUENTE_TITULO);
         titulo.setForeground(new Color(3, 45, 102));
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -81,13 +84,13 @@ public class PanelSistema extends JPanel {
         gbc.gridy = 3;
         gbc.gridx = 0;
         gbc.gridwidth = 2;
-        lblUltimaComprobacion.setFont(new Font("SansSerif", Font.ITALIC, 13));
+        lblUltimaComprobacion.setFont(EstiloVista.FUENTE_CURSIVA);
         lblUltimaComprobacion.setForeground(new Color(100, 115, 130));
         tarjeta.add(lblUltimaComprobacion, gbc);
 
         // Botón Probar Conexión
         JButton btnProbar = new JButton("Probar conexión (Singleton)");
-        btnProbar.setFont(new Font("SansSerif", Font.BOLD, 14));
+        btnProbar.setFont(EstiloVista.FUENTE_NEGRITA);
         btnProbar.setBackground(COLOR_PRIMARIO);
         btnProbar.setForeground(Color.WHITE);
         btnProbar.setFocusPainted(false);
@@ -112,25 +115,22 @@ public class PanelSistema extends JPanel {
         gbcExp.insets = new Insets(3, 4, 3, 4);
 
         JLabel lblExpTitulo = new JLabel("Puntos de uso del Patrón Singleton en esta pantalla:");
-        lblExpTitulo.setFont(new Font("SansSerif", Font.BOLD, 13));
+        lblExpTitulo.setFont(EstiloVista.FUENTE_NEGRITA);
         lblExpTitulo.setForeground(new Color(3, 45, 102));
         gbcExp.gridy = 0;
         panelExplicacion.add(lblExpTitulo, gbcExp);
 
-        JLabel lblExp1 = new JLabel("• ConfiguracionPlataforma: instancia global única con los datos del municipio.");
-        lblExp1.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        JTextArea txtExp1 = crearTextoExplicativo("• ConfiguracionPlataforma: instancia global única con los datos del municipio.");
         gbcExp.gridy = 1;
-        panelExplicacion.add(lblExp1, gbcExp);
+        panelExplicacion.add(txtExp1, gbcExp);
 
-        JLabel lblExp2 = new JLabel("• ConexionSingleton: única conexión activa a SQL Server; si no hay BD, opera en memoria.");
-        lblExp2.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        JTextArea txtExp2 = crearTextoExplicativo("• ConexionSingleton: única conexión activa a SQL Server; si no hay BD, opera en memoria.");
         gbcExp.gridy = 2;
-        panelExplicacion.add(lblExp2, gbcExp);
+        panelExplicacion.add(txtExp2, gbcExp);
 
-        JLabel lblExp3 = new JLabel("• Al pulsar 'Probar conexión', se llama dos veces para verificar 'creando' y 'reutilizando'.");
-        lblExp3.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        JTextArea txtExp3 = crearTextoExplicativo("• Al pulsar 'Probar conexión', se llama dos veces para verificar 'creando' y 'reutilizando'.");
         gbcExp.gridy = 3;
-        panelExplicacion.add(lblExp3, gbcExp);
+        panelExplicacion.add(txtExp3, gbcExp);
 
         gbc.gridy = 5;
         gbc.insets = new Insets(10, 8, 8, 8);
@@ -141,7 +141,30 @@ public class PanelSistema extends JPanel {
         gbcPrincipal.gridy = 0;
         gbcPrincipal.weightx = 1.0;
         gbcPrincipal.fill = GridBagConstraints.HORIZONTAL;
-        add(tarjeta, gbcPrincipal);
+        gbcPrincipal.anchor = GridBagConstraints.NORTH;
+        panelContenedor.add(tarjeta, gbcPrincipal);
+
+        // Envoltura con JScrollPane vertical para cuando la ventana se achique
+        JScrollPane scrollPane = new JScrollPane(panelContenedor);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getViewport().setBackground(new Color(245, 248, 253));
+
+        add(scrollPane, BorderLayout.CENTER);
+    }
+
+    private JTextArea crearTextoExplicativo(String texto) {
+        JTextArea area = new JTextArea(texto);
+        area.setFont(EstiloVista.FUENTE_BASE);
+        area.setForeground(new Color(50, 65, 80));
+        area.setLineWrap(true);
+        area.setWrapStyleWord(true);
+        area.setOpaque(false);
+        area.setEditable(false);
+        area.setFocusable(false);
+        area.setBorder(null);
+        return area;
     }
 
     private void agregarFila(JPanel panel, GridBagConstraints gbc, int fila,
@@ -150,13 +173,13 @@ public class PanelSistema extends JPanel {
         gbc.gridx = 0;
         gbc.weightx = 0;
         JLabel lbl = new JLabel(etiqueta);
-        lbl.setFont(FUENTE_LABEL);
+        lbl.setFont(EstiloVista.FUENTE_NEGRITA);
         lbl.setForeground(new Color(40, 50, 70));
         panel.add(lbl, gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 1.0;
-        valorLabel.setFont(FUENTE_VALOR);
+        valorLabel.setFont(EstiloVista.FUENTE_BASE);
         valorLabel.setForeground(new Color(20, 30, 45));
         panel.add(valorLabel, gbc);
     }
@@ -179,4 +202,3 @@ public class PanelSistema extends JPanel {
         }
     }
 }
-

@@ -12,7 +12,6 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -21,6 +20,7 @@ import java.awt.Insets;
  * Vista Swing: panel para registrar un nuevo trámite ciudadano.
  * GRASP Alta Cohesión: contiene únicamente los controles y validaciones del formulario de registro.
  * MVC: se comunica exclusivamente con AtencionController.
+ * Adaptación visual: utiliza EstiloVista para tipografías unificadas.
  */
 public class PanelRegistro extends JPanel {
 
@@ -33,8 +33,6 @@ public class PanelRegistro extends JPanel {
     private final JComboBox<String> tramiteCombo = new JComboBox<>(new String[]{"reclamo", "solicitud"});
 
     private static final Color COLOR_PRIMARIO = new Color(0, 74, 173); // #004AAD
-    private static final Font FUENTE_LABEL = new Font("SansSerif", Font.BOLD, 13);
-    private static final Font FUENTE_INPUT = new Font("SansSerif", Font.PLAIN, 14);
 
     /**
      * Construye el panel de registro.
@@ -68,7 +66,7 @@ public class PanelRegistro extends JPanel {
 
         // Título del formulario
         JLabel lblTitulo = new JLabel("Registrar Nuevo Trámite");
-        lblTitulo.setFont(new Font("SansSerif", Font.BOLD, 18));
+        lblTitulo.setFont(EstiloVista.FUENTE_TITULO);
         lblTitulo.setForeground(new Color(3, 45, 102));
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -86,18 +84,19 @@ public class PanelRegistro extends JPanel {
         agregarFila(tarjeta, gbc, 4, "Tipo de trámite:", tramiteCombo);
 
         // Estilos de inputs
-        dniField.setFont(FUENTE_INPUT);
-        nombreField.setFont(FUENTE_INPUT);
-        correoField.setFont(FUENTE_INPUT);
-        tramiteCombo.setFont(FUENTE_INPUT);
+        dniField.setFont(EstiloVista.FUENTE_BASE);
+        nombreField.setFont(EstiloVista.FUENTE_BASE);
+        correoField.setFont(EstiloVista.FUENTE_BASE);
+        tramiteCombo.setFont(EstiloVista.FUENTE_BASE);
 
         // Botón Registrar
         JButton btnRegistrar = new JButton("Registrar trámite");
-        btnRegistrar.setFont(new Font("SansSerif", Font.BOLD, 14));
+        btnRegistrar.setFont(EstiloVista.FUENTE_NEGRITA);
         btnRegistrar.setBackground(COLOR_PRIMARIO);
         btnRegistrar.setForeground(Color.WHITE);
         btnRegistrar.setFocusPainted(false);
         btnRegistrar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnRegistrar.setMargin(new Insets(6, 14, 6, 14));
         btnRegistrar.addActionListener(e -> registrarTramite());
 
         gbc.gridx = 0;
@@ -108,11 +107,12 @@ public class PanelRegistro extends JPanel {
 
         // Botón Limpiar
         JButton btnLimpiar = new JButton("Limpiar formulario");
-        btnLimpiar.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        btnLimpiar.setFont(EstiloVista.FUENTE_BASE);
         btnLimpiar.setBackground(new Color(235, 240, 248));
         btnLimpiar.setForeground(new Color(50, 70, 90));
         btnLimpiar.setFocusPainted(false);
         btnLimpiar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnLimpiar.setMargin(new Insets(5, 12, 5, 12));
         btnLimpiar.addActionListener(e -> limpiarFormulario());
 
         gbc.gridy = 6;
@@ -133,7 +133,7 @@ public class PanelRegistro extends JPanel {
         gbc.gridx = 0;
         gbc.weightx = 0;
         JLabel lbl = new JLabel(etiqueta);
-        lbl.setFont(FUENTE_LABEL);
+        lbl.setFont(EstiloVista.FUENTE_NEGRITA);
         lbl.setForeground(new Color(40, 50, 70));
         panel.add(lbl, gbc);
 
@@ -171,14 +171,14 @@ public class PanelRegistro extends JPanel {
 
         System.out.println("--- Registrando tramite en Mesa de Partes ---");
         Expediente exp = controlador.atenderCiudadano(dni, nombre, correo, tramite);
-        System.out.println("\n========================================");
+        System.out.println("\n====================================");
         System.out.println("TRAMITE REGISTRADO CORRECTAMENTE");
         System.out.println("Expediente: " + exp.getCodigo());
         System.out.println("Ciudadano:  " + nombre + " (DNI: " + dni + ")");
         System.out.println("Correo:     " + correo);
         System.out.println("Tipo:       " + tramite.toUpperCase());
         System.out.println("Estado:     " + exp.getEstado());
-        System.out.println("========================================\n");
+        System.out.println("====================================\n");
 
         if (alRegistrar != null) {
             alRegistrar.run();
@@ -198,4 +198,3 @@ public class PanelRegistro extends JPanel {
         tramiteCombo.setSelectedIndex(0);
     }
 }
-

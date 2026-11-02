@@ -3,6 +3,7 @@ package vistas;
 import controladores.AtencionController;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -15,10 +16,9 @@ import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Cursor;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -29,6 +29,7 @@ import java.util.List;
  * y permitir deshacer la última acción mediante los patrones Command y Memento.
  * GRASP Alta Cohesión: se encarga exclusivamente del monitoreo y reversión del historial.
  * MVC: se comunica únicamente con AtencionController.
+ * Adaptación visual: utiliza EstiloVista para tipografías unificadas y prevención de truncamientos.
  */
 public class PanelHistorialAcciones extends JPanel {
 
@@ -43,9 +44,7 @@ public class PanelHistorialAcciones extends JPanel {
     private final JLabel lblUltimaAccion = new JLabel("Sin acciones para deshacer");
 
     private static final Color COLOR_PRIMARIO = new Color(0, 74, 173); // #004AAD
-    private static final Color COLOR_DESHACER = new Color(180, 40, 40); // Rojo suave para acción destructiva/reversa
-    private static final Font FUENTE_NORMAL = new Font("SansSerif", Font.PLAIN, 13);
-    private static final Font FUENTE_NEGRITA = new Font("SansSerif", Font.BOLD, 13);
+    private static final Color COLOR_DESHACER = new Color(180, 40, 40); // Rojo suave para reversión
 
     public PanelHistorialAcciones(AtencionController controlador) {
         this.controlador = controlador;
@@ -85,12 +84,12 @@ public class PanelHistorialAcciones extends JPanel {
         ));
 
         JLabel lblTitulo = new JLabel("Historial de Acciones en Memoria (Patrones Command y Memento)");
-        lblTitulo.setFont(new Font("SansSerif", Font.BOLD, 16));
+        lblTitulo.setFont(EstiloVista.FUENTE_TITULO);
         lblTitulo.setForeground(new Color(3, 45, 102));
         cabecera.add(lblTitulo, BorderLayout.NORTH);
 
         JLabel lblSubtitulo = new JLabel("Muestra la pila de operaciones reversibles en orden cronológico inverso (la más reciente arriba).");
-        lblSubtitulo.setFont(FUENTE_NORMAL);
+        lblSubtitulo.setFont(EstiloVista.FUENTE_BASE);
         lblSubtitulo.setForeground(new Color(90, 105, 120));
         cabecera.add(lblSubtitulo, BorderLayout.SOUTH);
 
@@ -101,18 +100,32 @@ public class PanelHistorialAcciones extends JPanel {
         panelCentro.setBackground(Color.WHITE);
         panelCentro.setBorder(BorderFactory.createLineBorder(new Color(210, 225, 245), 1, true));
 
-        listaHistorial.setFont(FUENTE_NORMAL);
+        listaHistorial.setFont(EstiloVista.FUENTE_BASE);
         listaHistorial.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         listaHistorial.setFixedCellHeight(30);
         listaHistorial.setSelectionBackground(new Color(230, 240, 255));
         listaHistorial.setSelectionForeground(COLOR_PRIMARIO);
 
+        // Tooltip en cada elemento de la lista para visualización completa
+        listaHistorial.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value != null) {
+                    label.setToolTipText(value.toString());
+                }
+                return label;
+            }
+        });
+
         JScrollPane scroll = new JScrollPane(listaHistorial);
         scroll.getViewport().setBackground(Color.WHITE);
         scroll.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
+        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         panelCentro.add(scroll, BorderLayout.CENTER);
 
-        lblVacio.setFont(new Font("SansSerif", Font.ITALIC, 14));
+        lblVacio.setFont(EstiloVista.FUENTE_CURSIVA);
         lblVacio.setForeground(new Color(130, 140, 155));
         lblVacio.setBorder(BorderFactory.createEmptyBorder(15, 10, 15, 10));
         lblVacio.setVisible(false);
@@ -140,24 +153,26 @@ public class PanelHistorialAcciones extends JPanel {
         gbc.gridy = 0;
         gbc.weightx = 1.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        lblUltimaAccion.setFont(FUENTE_NEGRITA);
+        lblUltimaAccion.setFont(EstiloVista.FUENTE_NEGRITA);
         panel.add(lblUltimaAccion, gbc);
 
         // Fila 0, Columna 1: Botonera
         JPanel botonera = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         botonera.setBackground(Color.WHITE);
 
-        btnActualizar.setFont(FUENTE_NORMAL);
+        btnActualizar.setFont(EstiloVista.FUENTE_BASE);
         btnActualizar.setBackground(new Color(235, 242, 250));
         btnActualizar.setFocusPainted(false);
+        btnActualizar.setMargin(new Insets(5, 12, 5, 12));
         btnActualizar.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnActualizar.addActionListener(e -> cargarHistorial());
         botonera.add(btnActualizar);
 
-        btnDeshacer.setFont(new Font("SansSerif", Font.BOLD, 13));
+        btnDeshacer.setFont(EstiloVista.FUENTE_NEGRITA);
         btnDeshacer.setBackground(COLOR_DESHACER);
         btnDeshacer.setForeground(Color.WHITE);
         btnDeshacer.setFocusPainted(false);
+        btnDeshacer.setMargin(new Insets(5, 12, 5, 12));
         btnDeshacer.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnDeshacer.setEnabled(false);
         btnDeshacer.addActionListener(e -> AccionDeshacer.ejecutarDeshacer(this, controlador, btnDeshacer, this::cargarHistorial));

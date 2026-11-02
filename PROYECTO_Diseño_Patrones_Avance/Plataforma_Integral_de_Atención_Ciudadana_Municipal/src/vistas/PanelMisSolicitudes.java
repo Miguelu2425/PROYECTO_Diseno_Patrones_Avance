@@ -5,11 +5,11 @@ import patrones.creacionales.builder.Expediente;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
@@ -19,13 +19,12 @@ import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -35,19 +34,21 @@ import java.util.concurrent.ExecutionException;
 /**
  * Vista Swing: panel para listar, filtrar y gestionar el estado de las solicitudes ciudadanas.
  * Patrón MVC: interactúa exclusivamente con AtencionController.
- * Patrón State & Observer: permite avanzar de estado coordinando eventos y notificaciones.
+ * Patrón State, Observer, Command y Memento: permite avanzar y deshacer estados en pantalla.
+ * GRASP Alta Cohesión: diseño visual adaptativo usando EstiloVista.
  */
 public class PanelMisSolicitudes extends JPanel {
 
     private final AtencionController controlador;
 
-    private final JTextField txtDniFiltro = new JTextField(10);
+    private final JTextField txtDniFiltro = new JTextField(8);
     private final JButton btnBuscar = new JButton("Buscar mis solicitudes");
     private final JButton btnVerTodas = new JButton("Ver todas");
     private final JButton btnActualizar = new JButton("Actualizar");
 
     private final DefaultTableModel modeloTabla;
     private final JTable tablaSolicitudes;
+    private final JScrollPane scrollTabla;
     private final JLabel lblSinResultados = new JLabel("No hay solicitudes para mostrar", SwingConstants.CENTER);
 
     private final JLabel lblDetalleEstado = new JLabel("Seleccione un expediente de la tabla para ver su seguimiento.");
@@ -60,9 +61,7 @@ public class PanelMisSolicitudes extends JPanel {
     private String filtroDniActual = null;
 
     private static final Color COLOR_PRIMARIO = new Color(0, 74, 173); // #004AAD
-    private static final Color COLOR_DESHACER = new Color(180, 40, 40); // Rojo suave para reversion
-    private static final Font FUENTE_NORMAL = new Font("SansSerif", Font.PLAIN, 13);
-    private static final Font FUENTE_NEGRITA = new Font("SansSerif", Font.BOLD, 13);
+    private static final Color COLOR_DESHACER = new Color(180, 40, 40); // Rojo suave para reversión
 
     public PanelMisSolicitudes(AtencionController controlador) {
         this.controlador = controlador;
@@ -70,7 +69,7 @@ public class PanelMisSolicitudes extends JPanel {
         setBackground(new Color(245, 248, 253));
         setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
 
-        // Inicializar tabla
+        // Inicializar tabla con tooltip completo por celda
         String[] columnas = {"Código", "Tipo", "Ciudadano", "Estado", "Situación", "Fecha"};
         modeloTabla = new DefaultTableModel(columnas, 0) {
             @Override
@@ -79,22 +78,33 @@ public class PanelMisSolicitudes extends JPanel {
             }
         };
 
-        tablaSolicitudes = new JTable(modeloTabla);
+        tablaSolicitudes = new JTable(modeloTabla) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                if (c instanceof JComponent) {
+                    Object val = getValueAt(row, column);
+                    ((JComponent) c).setToolTipText(val != null ? val.toString() : null);
+                }
+                return c;
+            }
+        };
         configurarTabla();
 
-        // 1. Barra superior de filtros
+        // 1. Barra superior de filtros (sin cortes en botones)
         add(crearBarraFiltros(), BorderLayout.NORTH);
 
-        // 2. Centro: JTable con mensaje en caso de estar vacía
+        // 2. Centro: JTable con scroll horizontal y vertical
         JPanel panelCentro = new JPanel(new BorderLayout());
         panelCentro.setBackground(Color.WHITE);
         panelCentro.setBorder(BorderFactory.createLineBorder(new Color(210, 225, 245), 1, true));
 
-        JScrollPane scrollTabla = new JScrollPane(tablaSolicitudes);
+        scrollTabla = new JScrollPane(tablaSolicitudes);
         scrollTabla.getViewport().setBackground(Color.WHITE);
+        scrollTabla.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         panelCentro.add(scrollTabla, BorderLayout.CENTER);
 
-        lblSinResultados.setFont(new Font("SansSerif", Font.ITALIC, 14));
+        lblSinResultados.setFont(EstiloVista.FUENTE_BASE);
         lblSinResultados.setForeground(new Color(120, 130, 145));
         lblSinResultados.setBorder(BorderFactory.createEmptyBorder(15, 10, 15, 10));
         lblSinResultados.setVisible(false);
@@ -102,10 +112,10 @@ public class PanelMisSolicitudes extends JPanel {
 
         add(panelCentro, BorderLayout.CENTER);
 
-        // 3. Panel inferior de seguimiento y avance
+        // 3. Panel inferior de seguimiento, avance y deshacer
         add(crearPanelSeguimiento(), BorderLayout.SOUTH);
 
-        // Refresco automatico al hacerse visible
+        // Refresco automático al hacerse visible
         addAncestorListener(new AncestorListener() {
             @Override
             public void ancestorAdded(AncestorEvent event) {
@@ -126,54 +136,78 @@ public class PanelMisSolicitudes extends JPanel {
     }
 
     private JPanel crearBarraFiltros() {
-        JPanel barra = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
+        JPanel barra = new JPanel(new GridBagLayout());
         barra.setBackground(Color.WHITE);
         barra.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(210, 225, 245), 1, true),
-                BorderFactory.createEmptyBorder(6, 12, 6, 12)
+                BorderFactory.createEmptyBorder(8, 12, 8, 12)
         ));
 
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridy = 0;
+        gbc.insets = new Insets(2, 4, 2, 4);
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.NONE;
+
         JLabel lblDni = new JLabel("DNI:");
-        lblDni.setFont(FUENTE_NEGRITA);
-        barra.add(lblDni);
+        lblDni.setFont(EstiloVista.FUENTE_NEGRITA);
+        gbc.gridx = 0;
+        barra.add(lblDni, gbc);
 
-        txtDniFiltro.setFont(FUENTE_NORMAL);
-        barra.add(txtDniFiltro);
+        txtDniFiltro.setFont(EstiloVista.FUENTE_BASE);
+        txtDniFiltro.setMargin(new Insets(3, 6, 3, 6));
+        gbc.gridx = 1;
+        barra.add(txtDniFiltro, gbc);
 
-        btnBuscar.setFont(FUENTE_NEGRITA);
+        btnBuscar.setFont(EstiloVista.FUENTE_NEGRITA);
         btnBuscar.setBackground(COLOR_PRIMARIO);
         btnBuscar.setForeground(Color.WHITE);
         btnBuscar.setFocusPainted(false);
+        btnBuscar.setMargin(new Insets(5, 12, 5, 12));
         btnBuscar.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnBuscar.addActionListener(e -> buscarPorDni());
-        barra.add(btnBuscar);
+        gbc.gridx = 2;
+        barra.add(btnBuscar, gbc);
 
-        btnVerTodas.setFont(FUENTE_NORMAL);
+        btnVerTodas.setFont(EstiloVista.FUENTE_BASE);
         btnVerTodas.setBackground(new Color(235, 242, 250));
         btnVerTodas.setFocusPainted(false);
+        btnVerTodas.setMargin(new Insets(5, 12, 5, 12));
         btnVerTodas.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnVerTodas.addActionListener(e -> {
             txtDniFiltro.setText("");
             filtroDniActual = null;
             cargarSolicitudes(null, null);
         });
-        barra.add(btnVerTodas);
+        gbc.gridx = 3;
+        barra.add(btnVerTodas, gbc);
 
-        btnActualizar.setFont(FUENTE_NORMAL);
+        btnActualizar.setFont(EstiloVista.FUENTE_BASE);
         btnActualizar.setBackground(new Color(235, 242, 250));
         btnActualizar.setFocusPainted(false);
+        btnActualizar.setMargin(new Insets(5, 12, 5, 12));
         btnActualizar.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnActualizar.addActionListener(e -> cargarSolicitudes(filtroDniActual, obtenerCodigoSeleccionado()));
-        barra.add(btnActualizar);
+        gbc.gridx = 4;
+        barra.add(btnActualizar, gbc);
+
+        // Relleno horizontal para que no se compriman los controles
+        gbc.gridx = 5;
+        gbc.weightx = 1.0;
+        JPanel espaciador = new JPanel();
+        espaciador.setOpaque(false);
+        barra.add(espaciador, gbc);
 
         return barra;
     }
 
     private void configurarTabla() {
-        tablaSolicitudes.setFont(FUENTE_NORMAL);
-        tablaSolicitudes.setRowHeight(28);
+        tablaSolicitudes.setFont(EstiloVista.FUENTE_BASE);
+        tablaSolicitudes.setRowHeight(EstiloVista.ALTO_FILA);
         tablaSolicitudes.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        tablaSolicitudes.getTableHeader().setFont(FUENTE_NEGRITA);
+        tablaSolicitudes.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
+
+        tablaSolicitudes.getTableHeader().setFont(EstiloVista.FUENTE_NEGRITA);
         tablaSolicitudes.getTableHeader().setPreferredSize(new Dimension(0, 32));
         tablaSolicitudes.getTableHeader().setBackground(new Color(235, 242, 252));
         tablaSolicitudes.getTableHeader().setForeground(new Color(3, 45, 102));
@@ -186,7 +220,7 @@ public class PanelMisSolicitudes extends JPanel {
                                                            int row, int column) {
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 setHorizontalAlignment(SwingConstants.CENTER);
-                setFont(FUENTE_NEGRITA);
+                setFont(EstiloVista.FUENTE_NEGRITA);
 
                 String estado = (value != null) ? value.toString() : "";
                 if (!isSelected) {
@@ -213,13 +247,13 @@ public class PanelMisSolicitudes extends JPanel {
             }
         });
 
-        // Centrar Código y Situación
+        // Centrado de Código y Situación
         DefaultTableCellRenderer centrado = new DefaultTableCellRenderer();
         centrado.setHorizontalAlignment(SwingConstants.CENTER);
         tablaSolicitudes.getColumnModel().getColumn(0).setCellRenderer(centrado);
         tablaSolicitudes.getColumnModel().getColumn(4).setCellRenderer(centrado);
 
-        // Evento de selección de fila
+        // Selección de fila
         tablaSolicitudes.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 actualizarDetalleSeleccion();
@@ -237,79 +271,68 @@ public class PanelMisSolicitudes extends JPanel {
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(4, 6, 4, 6);
+        gbc.insets = new Insets(3, 4, 3, 4);
 
-        // Título de detalle
-        JLabel lblTitulo = new JLabel("Control y Seguimiento del Trámite Seleccionado");
-        lblTitulo.setFont(new Font("SansSerif", Font.BOLD, 14));
+        // Fila 0: Título de detalle
+        JLabel lblTitulo = new JLabel("Control y seguimiento del trámite seleccionado");
+        lblTitulo.setFont(EstiloVista.FUENTE_NEGRITA);
         lblTitulo.setForeground(new Color(3, 45, 102));
         gbc.gridx = 0;
         gbc.gridy = 0;
-        gbc.gridwidth = 2;
         gbc.weightx = 1.0;
         panel.add(lblTitulo, gbc);
 
-        // Estado actual y descripción
-        lblDetalleEstado.setFont(FUENTE_NORMAL);
+        // Fila 1: Estado actual y descripción
+        lblDetalleEstado.setFont(EstiloVista.FUENTE_BASE);
         gbc.gridy = 1;
         panel.add(lblDetalleEstado, gbc);
 
-        // Siguiente estado
-        lblSiguienteEstado.setFont(FUENTE_NEGRITA);
+        // Fila 2: Siguiente estado
+        lblSiguienteEstado.setFont(EstiloVista.FUENTE_NEGRITA);
         lblSiguienteEstado.setForeground(COLOR_PRIMARIO);
         gbc.gridy = 2;
-        gbc.gridwidth = 1;
         panel.add(lblSiguienteEstado, gbc);
 
-        // Botón Avanzar estado
-        btnAvanzar.setFont(new Font("SansSerif", Font.BOLD, 13));
+        // Fila 3: Fila de acciones (Avanzar estado + Deshacer última acción + Etiqueta de última acción)
+        JPanel filaAcciones = new JPanel(new GridBagLayout());
+        filaAcciones.setOpaque(false);
+        GridBagConstraints gbcAcc = new GridBagConstraints();
+        gbcAcc.insets = new Insets(6, 2, 2, 6);
+        gbcAcc.gridy = 0;
+        gbcAcc.anchor = GridBagConstraints.WEST;
+
+        btnAvanzar.setFont(EstiloVista.FUENTE_NEGRITA);
         btnAvanzar.setBackground(COLOR_PRIMARIO);
         btnAvanzar.setForeground(Color.WHITE);
         btnAvanzar.setFocusPainted(false);
         btnAvanzar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnAvanzar.setMargin(new Insets(5, 12, 5, 12));
         btnAvanzar.setEnabled(false);
         btnAvanzar.addActionListener(e -> confirmarYAvanzarEstado());
+        gbcAcc.gridx = 0;
+        gbcAcc.weightx = 0;
+        filaAcciones.add(btnAvanzar, gbcAcc);
 
-        gbc.gridx = 1;
-        gbc.weightx = 0;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.anchor = GridBagConstraints.EAST;
-        panel.add(btnAvanzar, gbc);
-
-        // Separador sutil
-        JSeparator sep = new JSeparator();
-        sep.setForeground(new Color(225, 235, 248));
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        gbc.gridwidth = 2;
-        gbc.weightx = 1.0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(10, 4, 10, 4);
-        panel.add(sep, gbc);
-
-        // Fila 4: Control de Deshacer (Command & Memento)
-        gbc.gridy = 4;
-        gbc.gridx = 0;
-        gbc.gridwidth = 1;
-        gbc.weightx = 1.0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(2, 6, 2, 6);
-        lblUltimaAccion.setFont(FUENTE_NORMAL);
-        panel.add(lblUltimaAccion, gbc);
-
-        btnDeshacer.setFont(new Font("SansSerif", Font.BOLD, 13));
+        btnDeshacer.setFont(EstiloVista.FUENTE_NEGRITA);
         btnDeshacer.setBackground(COLOR_DESHACER);
         btnDeshacer.setForeground(Color.WHITE);
         btnDeshacer.setFocusPainted(false);
         btnDeshacer.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnDeshacer.setMargin(new Insets(5, 12, 5, 12));
         btnDeshacer.setEnabled(false);
         btnDeshacer.addActionListener(e -> AccionDeshacer.ejecutarDeshacer(this, controlador, btnDeshacer, this::recargar));
+        gbcAcc.gridx = 1;
+        gbcAcc.weightx = 0;
+        filaAcciones.add(btnDeshacer, gbcAcc);
 
-        gbc.gridx = 1;
-        gbc.weightx = 0;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.anchor = GridBagConstraints.EAST;
-        panel.add(btnDeshacer, gbc);
+        lblUltimaAccion.setFont(EstiloVista.FUENTE_BASE);
+        gbcAcc.gridx = 2;
+        gbcAcc.weightx = 1.0;
+        gbcAcc.fill = GridBagConstraints.HORIZONTAL;
+        filaAcciones.add(lblUltimaAccion, gbcAcc);
+
+        gbc.gridy = 3;
+        panel.add(filaAcciones, gbc);
 
         return panel;
     }
@@ -424,6 +447,30 @@ public class PanelMisSolicitudes extends JPanel {
         return null;
     }
 
+    private String formatearFecha(String fechaOriginal) {
+        if (fechaOriginal == null || fechaOriginal.trim().isEmpty()) {
+            return "";
+        }
+        try {
+            if (fechaOriginal.length() >= 19 && fechaOriginal.charAt(10) == ' ') {
+                String yyyy = fechaOriginal.substring(0, 4);
+                String mm = fechaOriginal.substring(5, 7);
+                String dd = fechaOriginal.substring(8, 10);
+                String hora = fechaOriginal.substring(11, 16);
+                return dd + "/" + mm + "/" + yyyy + " " + hora;
+            }
+            if (fechaOriginal.contains("T") && fechaOriginal.length() >= 16) {
+                String yyyy = fechaOriginal.substring(0, 4);
+                String mm = fechaOriginal.substring(5, 7);
+                String dd = fechaOriginal.substring(8, 10);
+                String hora = fechaOriginal.substring(11, 16);
+                return dd + "/" + mm + "/" + yyyy + " " + hora;
+            }
+        } catch (Exception ignored) {
+        }
+        return fechaOriginal;
+    }
+
     private void cargarSolicitudes(String dniOpcional, String codigoASeleccionar) {
         SwingWorker<List<Expediente>, Void> worker = new SwingWorker<List<Expediente>, Void>() {
             @Override
@@ -440,6 +487,7 @@ public class PanelMisSolicitudes extends JPanel {
                     if (lista == null || lista.isEmpty()) {
                         lblSinResultados.setVisible(true);
                         actualizarDetalleSeleccion();
+                        EstiloVista.ajustarColumnas(tablaSolicitudes);
                         return;
                     }
 
@@ -454,7 +502,7 @@ public class PanelMisSolicitudes extends JPanel {
                                 e.getNombreCiudadano(),
                                 e.getEstado(),
                                 controlador.situacionEstado(e.getEstado()),
-                                e.getFechaRegistro()
+                                formatearFecha(e.getFechaRegistro())
                         });
 
                         if (codigoASeleccionar != null && codigoASeleccionar.equals(e.getCodigo())) {
@@ -469,6 +517,7 @@ public class PanelMisSolicitudes extends JPanel {
                     }
 
                     actualizarDetalleSeleccion();
+                    EstiloVista.ajustarColumnas(tablaSolicitudes);
                 } catch (ExecutionException ex) {
                     Throwable causa = ex.getCause() != null ? ex.getCause() : ex;
                     JOptionPane.showMessageDialog(PanelMisSolicitudes.this,
@@ -482,4 +531,3 @@ public class PanelMisSolicitudes extends JPanel {
         worker.execute();
     }
 }
-
