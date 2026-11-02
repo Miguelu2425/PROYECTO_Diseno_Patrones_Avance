@@ -1,8 +1,10 @@
 package patrones.creacionales.builder;
 
 /**
- * Builder: representa un expediente construido paso a paso.
- * Producto final del patron Builder aplicado al tramite ciudadano.
+ * Patrón Builder (Creacional):
+ * Representa un expediente administrativo municipal construido paso a paso.
+ * GRASP: Experto en Información - conoce y mantiene todos los datos intrínsecos del expediente.
+ * SOLID: S (Responsabilidad Única) - encapsula el estado inmutable de un trámite ciudadano.
  */
 public class Expediente {
 
@@ -15,7 +17,7 @@ public class Expediente {
     private final String fechaRegistro;
 
     /**
-     * Builder: construye el producto final usando los valores acumulados.
+     * Builder: construye el producto final inmutable usando los valores acumulados.
      */
     private Expediente(ExpedienteBuilder builder) {
         this.codigo = builder.codigo;
@@ -56,7 +58,8 @@ public class Expediente {
     }
 
     /**
-     * Builder: concentra la configuracion opcional del expediente.
+     * Patrón Builder / GRASP: Creador:
+     * Constructor estático interno encargado de ensamblar progresivamente la entidad Expediente.
      */
     public static class ExpedienteBuilder {
 

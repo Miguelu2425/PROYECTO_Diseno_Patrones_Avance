@@ -28,7 +28,7 @@ public class PruebaImportacion {
 
         System.out.println("\n=== RESULTADO PRUEBA IMPORTACION: " + ok + " OK, " + fallo + " FALLO ===");
         if (fallo > 0) {
-            System.exit(1);
+            throw new AssertionError("PruebaImportacion finalizo con " + fallo + " fallos.");
         }
     }
 

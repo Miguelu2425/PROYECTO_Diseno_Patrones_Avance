@@ -1,7 +1,11 @@
 package patrones.comportamiento.state;
 
 /**
- * Patron State: interfaz que define el contrato y transiciones de estado de un tramite.
+ * Patrón State (Comportamiento):
+ * Interfaz que define el contrato y transiciones de estado de un trámite municipal.
+ * GRASP: Experto en Información - cada estado conoce sus atributos y su condición terminal.
+ * GRASP: Polimorfismo - delega en cada estado concreto la resolución polimórfica de la transición siguiente.
+ * SOLID: O (Abierto/Cerrado) - permite añadir nuevos estados del ciclo de vida sin modificar las clases existentes.
  */
 public interface EstadoTramite {
 
@@ -20,7 +24,8 @@ public interface EstadoTramite {
     String getDescripcion();
 
     /**
-     * Patron State: calcula la siguiente transicion en el ciclo de vida del tramite.
+     * Patron State / GRASP: Polimorfismo:
+     * Calcula la siguiente transición en el ciclo de vida del trámite según el estado concreto.
      *
      * @return proximo estado
      */

@@ -1,19 +1,21 @@
 package patrones.comportamiento.command;
 
 /**
- * Patrón Command: contrato que encapsula una solicitud u operación como un objeto,
- * permitiendo parametrizar invocadores, encolar operaciones y proporcionar
- * soporte uniforme para operaciones reversibles (deshacer/undo).
+ * Patrón Command (Comportamiento):
+ * Encapsula una solicitud u operación como un objeto desacoplando al invocador del receptor.
+ * Proporciona soporte uniforme para operaciones reversibles (deshacer / Undo).
+ * GRASP: Polimorfismo - los métodos ejecutar() y deshacer() se invocan polimórficamente sobre cualquier comando.
+ * SOLID: I (Segregación de Interfaces) - contrato mínimo y cohesivo para acciones reversibles.
  */
 public interface Comando {
 
     /**
-     * Patrón Command: ejecuta la operación encapsulada.
+     * Patrón Command / GRASP: Polimorfismo: ejecuta la operación encapsulada.
      */
     void ejecutar();
 
     /**
-     * Patrón Command: revierte la operación realizada durante la ejecución.
+     * Patrón Command / GRASP: Polimorfismo: revierte la operación realizada durante la ejecución.
      */
     void deshacer();
 
@@ -24,4 +26,3 @@ public interface Comando {
      */
     String getDescripcion();
 }
-

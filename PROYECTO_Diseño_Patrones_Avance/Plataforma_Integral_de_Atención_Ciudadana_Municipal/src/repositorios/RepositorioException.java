@@ -6,6 +6,8 @@ package repositorios;
  */
 public class RepositorioException extends RuntimeException {
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * Repositorio: crea una excepcion con mensaje descriptivo.
      *

@@ -38,7 +38,7 @@ public class PruebaProxy {
 
         System.out.println("\n=== RESULTADO PRUEBA PROXY: " + ok + " OK, " + fallo + " FALLO ===");
         if (fallo > 0) {
-            System.exit(1);
+            throw new AssertionError("PruebaProxy finalizo con " + fallo + " fallos.");
         }
     }
 

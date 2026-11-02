@@ -53,7 +53,7 @@ public class PruebaComandos {
 
         System.out.println("\n=== RESULTADO PRUEBA COMANDOS: " + ok + " OK, " + fallo + " FALLO ===");
         if (fallo > 0) {
-            System.exit(1);
+            throw new AssertionError("PruebaComandos finalizo con " + fallo + " fallos.");
         }
     }
 

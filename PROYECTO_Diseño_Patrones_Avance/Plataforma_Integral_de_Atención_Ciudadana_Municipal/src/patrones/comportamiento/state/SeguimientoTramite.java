@@ -9,9 +9,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Patron State (Contexto), Patron Observer (Sujeto) y Patron Memento (Originator):
- * Administra el estado actual del expediente, coordina la notificacion a observadores
- * y genera/restaura instantaneas de su estado interno.
+ * Patrón State (Contexto), Patrón Observer (Sujeto) y Patrón Memento (Originator):
+ * Administra el estado actual del expediente, coordina la notificación a observadores
+ * y genera/restaura instantáneas de su estado interno.
+ * GRASP: Experto en Información - conoce el expediente, su estado vigente y las reglas de avance.
+ * SOLID: S (Responsabilidad Única) - centraliza el control del ciclo de vida del trámite.
  */
 public class SeguimientoTramite {
 

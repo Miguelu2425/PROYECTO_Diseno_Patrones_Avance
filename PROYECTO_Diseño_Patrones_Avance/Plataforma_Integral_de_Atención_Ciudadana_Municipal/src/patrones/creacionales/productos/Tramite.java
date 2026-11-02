@@ -1,12 +1,15 @@
 package patrones.creacionales.productos;
 
 /**
- * Producto común utilizado por Factory, Abstract Factory, Composite y Proxy.
+ * Patrón Producto / Interfaz común:
+ * Utilizado transversalmente por Factory Method, Abstract Factory, Adapter, Composite y Proxy.
+ * GRASP: Polimorfismo - el método procesar() permite tratar cualquier trámite, proxy, grupo o adaptador de forma homogénea.
+ * SOLID: I (Segregación de Interfaces) - contrato específico y enfocado que evita forzar métodos innecesarios.
  */
 public interface Tramite {
 
     /**
-     * Producto: define la operación común de cualquier trámite.
+     * GRASP: Polimorfismo: define la operación común ejecutada polimórficamente por cada tipo de trámite.
      */
     void procesar();
 }

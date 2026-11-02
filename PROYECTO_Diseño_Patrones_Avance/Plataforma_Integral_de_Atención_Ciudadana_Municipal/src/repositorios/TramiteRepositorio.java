@@ -5,8 +5,12 @@ import patrones.creacionales.builder.Expediente;
 import java.util.List;
 
 /**
- * Repositorio: contrato que abstrae el mecanismo de persistencia de tramites.
- * GRASP Polimorfismo: permite intercambiar SQL Server y memoria sin cambiar clientes.
+ * Patrón Repository (Arquitectura):
+ * Abstrae las operaciones de persistencia del expediente ciudadano.
+ * GRASP: Fabricación Pura - clase técnica que no representa un concepto del dominio pero otorga alta cohesión.
+ * GRASP: Polimorfismo - permite intercambiar implementaciones (SQL Server y memoria) de forma transparente.
+ * SOLID: D (Inversión de Dependencias) - el dominio depende de esta interfaz y no de controladores JDBC o SQL.
+ * SOLID: L (Sustitución de Liskov) - las implementaciones en memoria y SQL Server son perfectamente intercambiables.
  */
 public interface TramiteRepositorio {
 

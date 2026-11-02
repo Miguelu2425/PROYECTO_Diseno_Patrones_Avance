@@ -44,7 +44,7 @@ public class PruebaControladorSolicitudes {
 
         System.out.println("\n=== RESULTADO PRUEBA CONTROLADOR: " + ok + " OK, " + fallo + " FALLO ===");
         if (fallo > 0) {
-            System.exit(1);
+            throw new AssertionError("PruebaControladorSolicitudes finalizo con " + fallo + " fallos.");
         }
     }
 

@@ -13,8 +13,9 @@ import java.util.List;
 
 /**
  * Controlador MVC: conecta la vista con la Facade de mesa de partes.
- * GRASP Controlador: es el primer objeto que recibe las solicitudes de la vista.
- * Desacopla completamente las vistas de los patrones internos (State, Observer, Command, Memento, Singleton).
+ * GRASP: Controlador - es el primer objeto que recibe y coordina las solicitudes de la vista hacia la lógica de negocio.
+ * SOLID: S (Responsabilidad Única) - su única función es intermediar entre la UI y el subsistema de atención ciudadana.
+ * SOLID: D (Inversión de Dependencias) - admite inyección de dependencias de MesaPartesFacade para facilitar pruebas desacopladas.
  */
 public class AtencionController {
 

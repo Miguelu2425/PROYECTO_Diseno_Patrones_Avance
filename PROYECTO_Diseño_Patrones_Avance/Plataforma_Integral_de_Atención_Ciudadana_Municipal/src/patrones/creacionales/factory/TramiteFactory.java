@@ -5,7 +5,9 @@ import patrones.creacionales.productos.Solicitud;
 import patrones.creacionales.productos.Tramite;
 
 /**
- * Factory Method simple: centraliza la creación por tipo de trámite.
+ * Patrón Factory Method (Creacional):
+ * GRASP: Creador - asigna la responsabilidad de instanciar productos concretos de Tramite (Reclamo, Solicitud).
+ * SOLID: O (Abierto/Cerrado) - centraliza la creación encapsulando las clases concretas de productos.
  */
 public class TramiteFactory {
 

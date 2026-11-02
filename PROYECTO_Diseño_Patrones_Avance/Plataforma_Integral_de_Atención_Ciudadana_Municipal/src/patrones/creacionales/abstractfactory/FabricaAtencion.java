@@ -4,7 +4,11 @@ import patrones.creacionales.productos.Tramite;
 import patrones.creacionales.prototype.EncuestaSatisfaccion;
 
 /**
- * Abstract Factory: define la familia de productos de atención ciudadana.
+ * Patrón Abstract Factory (Creacional):
+ * Define la interfaz para la creación de familias de productos afines de atención ciudadana.
+ * GRASP: Creador - define la creación coordinada de trámites y encuestas complementarias.
+ * SOLID: D (Inversión de Dependencias) - los clientes dependen de esta interfaz abstracta.
+ * SOLID: O (Abierto/Cerrado) - permite incorporar nuevas familias de trámites sin alterar clientes.
  */
 public interface FabricaAtencion {
 
