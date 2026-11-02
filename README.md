@@ -60,34 +60,41 @@ Para restablecer la base de datos a su estado inicial sin reinstalar, ejecute el
 
 ## 4. Compilación y Ejecución
 
-### Compilación desde Terminal (Java 11+)
-Desde la raíz del repositorio, compile todas las clases:
+### Opción A: Compilación desde Terminal (Java 11+)
+Desde la raíz del repositorio, compile todas las clases con el classpath que incluye el driver JDBC en `lib/`:
 ```bash
-javac --release 11 -encoding UTF-8 -cp "PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/lib/*;PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/src" (Get-ChildItem -Path "PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/src" -Recurse -Filter *.java | ForEach-Object { $_.FullName })
+javac --release 11 -encoding UTF-8 -cp "lib/*;PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/src" (Get-ChildItem -Path "PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/src" -Recurse -Filter *.java | ForEach-Object { $_.FullName })
 ```
+
+### Opción B: Compilación con Apache Ant / NetBeans
+El proyecto cuenta con el script estándar Ant en el subproyecto:
+```bash
+ant -f "PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/build.xml" compile
+```
+*(O abriendo directamente la carpeta `Plataforma_Integral_de_Atención_Ciudadana_Municipal` desde Apache NetBeans).*
 
 ### Ejecutar la Aplicación Principal (Swing UI)
 ```bash
-java -cp "PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/lib/*;PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/src" vistas.Main
+java -cp "lib/*;PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/src" vistas.Main
 ```
 
 ### Ejecutar la Suite Completa de Pruebas Automatizadas
 ```bash
-java -cp "PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/lib/*;PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/src" pruebas.EjecutarTodasLasPruebas
+java -cp "lib/*;PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/src" pruebas.EjecutarTodasLasPruebas
 ```
 
 ### Ejecutar Demostraciones en Consola
-- **Demostración de los 16 patrones del curso:**
+- **Demostración de los 15 patrones del curso (Singleton en 2 clases) + Repository:**
   ```bash
-  java -cp "PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/lib/*;PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/src" pruebas.DemoPatrones
+  java -cp "lib/*;PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/src" pruebas.DemoPatrones
   ```
 - **Demostración de Importación (Composite -> Adapter -> Proxy -> Command -> Observer):**
   ```bash
-  java -cp "PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/lib/*;PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/src" pruebas.DemoImportacionConsola
+  java -cp "lib/*;PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/src" pruebas.DemoImportacionConsola
   ```
 - **Diagnóstico detallado de Conexión a Base de Datos:**
   ```bash
-  java -cp "PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/lib/*;PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/src" pruebas.DiagnosticoConexion
+  java -cp "lib/*;PROYECTO_Diseño_Patrones_Avance/Plataforma_Integral_de_Atención_Ciudadana_Municipal/src" pruebas.DiagnosticoConexion
   ```
 
 ---
@@ -170,22 +177,31 @@ InvocadorComandos.pilaDeshacer.push(comando)
 
 ---
 
-## 6. Inventario de Patrones de Diseño Implementados (16 Patrones)
+## 6. Inventario de Patrones de Diseño Implementados (15 Patrones + Repository)
+
+El proyecto implementa un total de **15 patrones de diseño GoF distintos (con el patrón Singleton aplicado en 2 clases independientes) + el patrón de arquitectura Repository**, organizados según la estructura temática del sílabo:
+
+- **Unidad 1:** Principios SOLID, bajo acoplamiento y alta cohesión.
+- **Unidad 2 (Creacionales):** 5 patrones (Singleton en 2 clases, Factory Method, Abstract Factory, Builder, Prototype).
+- **Unidad 3 (Estructurales):** 6 patrones (Adapter, Facade, Decorator, Composite, Proxy, Bridge).
+- **Unidad 4 (Comportamiento):** 4 patrones (State, Observer, Command, Memento).
+- **Unidad 5:** Patrones de asignación de responsabilidades GRASP (Controlador, Creador, Experto en Información, Fabricación Pura, Polimorfismo).
+- **Arquitectura:** Patrón Repository con desacoplamiento de persistencia y contingencia transparente en memoria.
 
 | # | Unidad | Patrón | Tipo / Rol | Clases Reales en el Código | Propósito en el Flujo Real |
 |:---:|:---:|:---|:---:|:---|:---|
-| **1** | U1 | **Singleton** | Creacional | `ConexionSingleton` | Garantiza una única instancia de conexión activa a Microsoft SQL Server en toda la aplicación. |
-| **2** | U1 | **Singleton** | Creacional | `ConfiguracionPlataforma` | Almacena los parámetros organizacionales del municipio; thread-safe vía Bill Pugh Holder. |
+| **1** | U2 | **Singleton** | Creacional | `ConexionSingleton` | Garantiza una única instancia de conexión activa a Microsoft SQL Server en toda la aplicación. |
+| **2** | U2 | **Singleton** | Creacional | `ConfiguracionPlataforma` | Almacena los parámetros organizacionales del municipio; thread-safe vía Bill Pugh Holder. |
 | **3** | U2 | **Factory Method** | Creacional | `TramiteFactory` | Instancia el producto concreto (`Reclamo` o `Solicitud`) desacoplando a los clientes de las clases concretas. |
-| **4** | U2 | **Abstract Factory** | Creacional | `FabricaAtencion`, `FabricaReclamo`, `FabricaSolicitud` | Define la familia abstracta para construir trámites y encuestas complementarias de forma homogénea. |
+| **4** | U2 | **Abstract Factory** | Creacional | `FabricaAtencion`, `FabricaReclamo`, `FabricaSolicitud` | Define familias de productos complementarios (*exclusivo de demostración técnica en `pruebas.DemoPatrones`*). |
 | **5** | U2 | **Builder** | Creacional | `Expediente.ExpedienteBuilder` | Construye paso a paso la entidad inmutable `Expediente` asegurando la coherencia de todos sus atributos. |
 | **6** | U2 | **Prototype** | Creacional | `EncuestaSatisfaccion` | Clona dinámicamente (`clone()`) la encuesta de satisfacción para enviarla al ciudadano cuando su trámite se cierra. |
 | **7** | U3 | **Facade** | Estructural | `MesaPartesFacade` | Punto único de entrada de alto nivel; simplifica la interacción coordinando repositorio, comandos, estados y observadores. |
 | **8** | U3 | **Adapter** | Estructural | `AdaptadorSistemaAntiguo`, `SistemaAntiguoQuejas` | Traduce quejas vecinales del formato heredado al modelo `Ciudadano` y contrato `Tramite` actual para su importación. |
 | **9** | U3 | **Composite** | Estructural | `GrupoTramites` | Agrupa lotes de trámites heredados y los procesa de manera uniforme mediante una misma interfaz. |
 | **10** | U3 | **Proxy** | Estructural | `TramiteProxy`, `ValidadorSolicitud` | Controla el acceso al registro: valida reglas de negocio, autoriza o deniega con excepciones, y retrasa la creación real. |
-| **11** | U3 | **Decorator** | Estructural | `Notificador`, `NotificadorBase`, `NotificadorDecorator`, `NotificadorSMS` | Añade dinámicamente el canal SMS sobre el canal base de la plataforma para notificaciones ciudadanas. |
-| **12** | U3 | **Bridge** | Estructural | `AlertaCiudadano`, `CanalNotificacion`, `CanalCorreo`, `CanalSMS` | Desacopla la abstracción de alertas de los canales concretos de entrega (Correo y SMS). |
+| **11** | U3 | **Decorator** | Estructural | `Notificador`, `NotificadorBase`, `NotificadorDecorator`, `NotificadorSMS` | Añade dinámicamente el canal SMS sobre el canal base de la plataforma para notificaciones ciudadanas (*simulado por consola*). |
+| **12** | U3 | **Bridge** | Estructural | `AlertaCiudadano`, `CanalNotificacion`, `CanalCorreo`, `CanalSMS` | Desacopla la abstracción de alertas de los canales concretos de entrega Correo y SMS (*simulado por consola*). |
 | **13** | U4 | **State** | Comportamiento | `EstadoTramite`, `EstadoEnRevision`, `EstadoAtendido`, `EstadoCerrado`, `SeguimientoTramite` | Modela el ciclo de vida del trámite: *"En Revision"* -> *"Atendido"* -> *"Cerrado"*, resolviendo polimórficamente cada transición. |
 | **14** | U4 | **Observer** | Comportamiento | `ObservadorTramite`, `CambioEstado`, `ObservadorConsola`, `ObservadorCiudadano`, `ObservadorEncuesta` | Notifica automáticamente a múltiples componentes desacoplados ante registros, cambios de estado o reversiones. |
 | **15** | U4 | **Command** | Comportamiento | `Comando`, `RegistrarTramiteComando`, `AvanzarEstadoComando`, `InvocadorComandos` | Encapsula operaciones como objetos ejecutables y reversibles, gestionando la pila de deshacer (*Undo*). |
@@ -194,7 +210,7 @@ InvocadorComandos.pilaDeshacer.push(comando)
 
 ---
 
-## 7. Principios SOLID en el Proyecto
+## 7. Principios SOLID en el Proyecto (Unidad 1: SOLID, Bajo Acoplamiento, Alta Cohesión)
 
 | Principio SOLID | Definición Concreta | Evidencia en Clases Reales |
 |---|---|---|
@@ -206,7 +222,7 @@ InvocadorComandos.pilaDeshacer.push(comando)
 
 ---
 
-## 8. Patrones GRASP en el Proyecto
+## 8. Patrones GRASP en el Proyecto (Unidad 5: GRASP)
 
 | Patrón GRASP | Definición Concreta | Evidencia en Clases Reales |
 |---|---|---|
@@ -231,7 +247,7 @@ PROYECTO_Diseno_Patrones_Avance/
 │   ├── script_municipalidad.sql                <- Script T-SQL oficial de creación de BD y tablas
 │   └── limpiar_datos.sql                       <- Script auxiliar para reiniciar datos de prueba
 ├── docs/
-│   ├── INVENTARIO_PATRONES.md                  <- Inventario técnico detallado de los 16 patrones
+│   ├── INVENTARIO_PATRONES.md                  <- Inventario técnico de los 15 patrones (Singleton en 2 clases) + Repository
 │   └── CASOS_PRUEBA.md                         <- Matriz completa de casos de prueba P01-Pn
 ├── lib/
 │   └── mssql-jdbc-12.8.1.jre11.jar             <- Driver JDBC oficial para SQL Server

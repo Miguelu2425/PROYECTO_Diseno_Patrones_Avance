@@ -8,32 +8,38 @@
 
 ## Resumen Ejecutivo de Implementación
 
-El proyecto implementa un total de **16 patrones GoF** clasificados por unidades temáticas, más el patrón arquitectónico **Repository**:
-- **Unidad 1 y 2 (Creacionales):** 6 patrones (Singleton x2, Factory Method, Abstract Factory, Builder, Prototype).
-- **Unidad 3 (Estructurales):** 6 patrones (Adapter, Bridge, Composite, Decorator, Facade, Proxy).
-- **Unidad 4 (Comportamiento):** 4 patrones (State, Observer, Command, Memento).
-- **Arquitectura:** 1 patrón (Repository con conmutación dinámica BD/Memoria).
+El proyecto implementa un total de **15 patrones de diseño GoF distintos (con el patrón Singleton aplicado en 2 clases independientes) + el patrón de arquitectura Repository**, organizados según la estructura temática del sílabo:
 
-Todos los patrones participan activamente en el **flujo real de producción**, a excepción de `Abstract Factory` que se conserva como componente de demostración técnica de familias de productos en `pruebas.DemoPatrones`.
+- **Unidad 1:** Principios SOLID, bajo acoplamiento y alta cohesión.
+- **Unidad 2 (Creacionales):** 5 patrones (Singleton aplicado en 2 clases, Factory Method, Abstract Factory, Builder, Prototype).
+- **Unidad 3 (Estructurales):** 6 patrones (Adapter, Facade, Decorator, Composite, Proxy, Bridge).
+- **Unidad 4 (Comportamiento):** 4 patrones (State, Observer, Command, Memento).
+- **Unidad 5:** Patrones de asignación de responsabilidades GRASP (Controlador, Creador, Experto en Información, Fabricación Pura, Polimorfismo).
+- **Arquitectura:** Patrón Repository con desacoplamiento de persistencia y conmutación transparente a memoria.
+
+Todos los patrones participan activamente en el **flujo real de producción**, a excepción de `Abstract Factory` que se conserva como componente de demostración técnica de familias de productos en `pruebas.DemoPatrones`. Los canales de notificación externa (correo y SMS) son **simulados** mediante trazas en consola (`System.out`), y la plataforma no requiere autenticación ni gestión de credenciales de usuario vecino.
 
 ---
 
 ## Tabla de Mapeo Técnico Exhaustivo
 
+> [!NOTE]
+> Son **15 patrones de diseño GoF distintos (Singleton aplicado en 2 clases) + Repository**. En la tabla se detallan ambas clases Singleton para reflejar su rol específico en la arquitectura.
+
 | # | Unidad | Patrón | Paquete en `src/` | Nombres Exactos de Clases e Interfaces | Rol en la Arquitectura | Punto Exacto de Invocación en el Flujo Real |
 |:---:|:---:|:---|:---|:---|:---|:---|
-| **1** | U1 | **Singleton (Conexión BD)** | `patrones.creacionales.singleton` | `ConexionSingleton` | Administrador de conexión única JDBC a SQL Server | `repositorios.RepositorioFactory.crear()` y `controladores.AtencionController.probarConexion()` llamando a `ConexionSingleton.getInstancia().getConexion()`. |
-| **2** | U1 | **Singleton (Configuración)** | `patrones.creacionales.singleton` | `ConfiguracionPlataforma` | Almacén global de configuración municipal (Bill Pugh Thread-Safe) | `vistas.Main.<init>()` y `vistas.PanelSistema.actualizarDatos()` invocando `ConfiguracionPlataforma.getInstancia().getNombreMunicipio()`. |
+| **1** | U2 | **Singleton (Conexión BD)** | `patrones.creacionales.singleton` | `ConexionSingleton` | Administrador de conexión única JDBC a SQL Server | `repositorios.RepositorioFactory.crear()` y `controladores.AtencionController.probarConexion()` llamando a `ConexionSingleton.getInstancia().getConexion()`. |
+| **2** | U2 | **Singleton (Configuración)** | `patrones.creacionales.singleton` | `ConfiguracionPlataforma` | Almacén global de configuración municipal (Bill Pugh Thread-Safe) | `vistas.Main.<init>()` y `vistas.PanelSistema.actualizarDatos()` invocando `ConfiguracionPlataforma.getInstancia().getNombreMunicipio()`. |
 | **3** | U2 | **Factory Method** | `patrones.creacionales.factory`<br>`patrones.creacionales.productos` | `TramiteFactory`<br>`Tramite`, `Reclamo`, `Solicitud` | Fábrica simple desacoplada de productos concretos | `patrones.estructurales.proxy.TramiteProxy.procesar()` invocando `TramiteFactory.crearTramite(tipoTramite).procesar()`. |
 | **4** | U2 | **Abstract Factory** | `patrones.creacionales.abstractfactory` | `FabricaAtencion`<br>`FabricaReclamo`, `FabricaSolicitud` | Familia abstracta de productos complementarios | *Exclusivo de demostración técnica:* invocado en `pruebas.DemoPatrones.demostrarPatrones()`. |
 | **5** | U2 | **Builder** | `patrones.creacionales.builder` | `Expediente`<br>`Expediente.ExpedienteBuilder` | Construcción por pasos de la entidad inmutable del trámite | `repositorios.TramiteRepositorioMemoria.registrar()` y `TramiteRepositorioSqlServer.registrar()` mediante `new Expediente.ExpedienteBuilder().build()`. |
-| **6** | U2 | **Prototype** | `patrones.creacionales.prototype` | `EncuestaSatisfaccion` | Clonación rápida en memoria de encuestas de atención | `patrones.comportamiento.observer.ObservadorEncuesta.actualizar(CambioEstado)` ejecutando `prototipo.clone().enviarEncuesta()` cuando el trámite pasa a *"Cerrado"*. |
+| **6** | U2 | **Prototype** | `patrones.creacionales.prototype` | `EncuestaSatisfaccion` | Clonación rápida en memoria de encuestas de atención | `patrones.comportamiento.observer.ObservadorEncuesta.actualizar(CambioEstado)` ejecutando `prototipo.clone().enviarEncuesta()` cuando el trámite pasa a *"Cerrado"`. |
 | **7** | U3 | **Facade** | `patrones.estructurales.facade` | `MesaPartesFacade`<br>`ResultadoImportacion` | Fachada unificada de alto nivel para el controlador | `controladores.AtencionController.atenderCiudadano()`, `avanzarEstado()`, `deshacerUltimaAccion()` e `importarQuejasAntiguas()`. |
 | **8** | U3 | **Adapter** | `patrones.estructurales.adapter` | `AdaptadorSistemaAntiguo`<br>`SistemaAntiguoQuejas`<br>`RegistroQuejaAntigua` | Adaptación de registros antiguos a `Ciudadano` y contrato `Tramite` | `patrones.estructurales.facade.MesaPartesFacade.importarQuejasAntiguas()` adapta cada registro heredado y extrae `getCiudadano()`. |
 | **9** | U3 | **Composite** | `patrones.estructurales.composite` | `GrupoTramites` | Tratamiento uniforme de colecciones de trámites como uno solo | `patrones.estructurales.facade.MesaPartesFacade.importarQuejasAntiguas()` agrega adaptadores a `GrupoTramites` y ejecuta `grupo.procesar()`. |
 | **10** | U3 | **Proxy** | `patrones.estructurales.proxy` | `TramiteProxy`<br>`ValidadorSolicitud`<br>`SolicitudRechazadaException` | Control de acceso, validación de reglas y creación perezosa | `patrones.comportamiento.command.RegistrarTramiteComando.ejecutar()` ejecuta `new TramiteProxy(ciudadano, tipo).procesar()` antes de persistir. |
-| **11** | U3 | **Bridge** | `patrones.estructurales.bridge` | `AlertaCiudadano`<br>`CanalNotificacion`<br>`CanalCorreo`, `CanalSMS` | Desacopla la lógica de alertas del medio de transmisión físico | `patrones.comportamiento.observer.ObservadorCiudadano.actualizar(CambioEstado)` ejecuta `new AlertaCiudadano(new CanalCorreo()).enviar(...)`. |
-| **12** | U3 | **Decorator** | `patrones.estructurales.decorator` | `Notificador`<br>`NotificadorBase`<br>`NotificadorDecorator`<br>`NotificadorSMS` | Enriquecimiento dinámico de canales de notificación | `patrones.comportamiento.observer.ObservadorCiudadano.actualizar(CambioEstado)` ejecuta `new NotificadorSMS(new NotificadorBase()).enviar(...)`. |
+| **11** | U3 | **Bridge** | `patrones.estructurales.bridge` | `AlertaCiudadano`<br>`CanalNotificacion`<br>`CanalCorreo`, `CanalSMS` | Desacopla la lógica de alertas del medio de transmisión físico | `patrones.comportamiento.observer.ObservadorCiudadano.actualizar(CambioEstado)` ejecuta `new AlertaCiudadano(new CanalCorreo()).enviar(...)` (simulado por consola). |
+| **12** | U3 | **Decorator** | `patrones.estructurales.decorator` | `Notificador`<br>`NotificadorBase`<br>`NotificadorDecorator`<br>`NotificadorSMS` | Enriquecimiento dinámico de canales de notificación | `patrones.comportamiento.observer.ObservadorCiudadano.actualizar(CambioEstado)` ejecuta `new NotificadorSMS(new NotificadorBase()).enviar(...)` (simulado por consola). |
 | **13** | U4 | **State** | `patrones.comportamiento.state` | `EstadoTramite`<br>`EstadosTramite`<br>`EstadoEnRevision`<br>`EstadoAtendido`<br>`EstadoCerrado`<br>`SeguimientoTramite` | Transición polimórfica del ciclo de vida del trámite | `patrones.comportamiento.command.AvanzarEstadoComando.ejecutar()` ejecuta `seguimiento.avanzarEstado()`, transicionando `En Revision` -> `Atendido` -> `Cerrado`. |
 | **14** | U4 | **Observer** | `patrones.comportamiento.observer` | `ObservadorTramite`<br>`CambioEstado`<br>`ObservadorConsola`<br>`ObservadorCiudadano`<br>`ObservadorEncuesta` | Publicación y suscripción desacoplada ante eventos de cambio | `RegistrarTramiteComando.ejecutar()`, `AvanzarEstadoComando.ejecutar()` y `AvanzarEstadoComando.deshacer()` notifican a la lista de observadores. |
 | **15** | U4 | **Command** | `patrones.comportamiento.command` | `Comando`<br>`RegistrarTramiteComando`<br>`AvanzarEstadoComando`<br>`InvocadorComandos` | Encapsulación de acciones y gestión de la pila de deshacer (*Undo*) | `MesaPartesFacade.registrarNuevoTramite()` y `avanzarEstado()` ejecutan vía `invocador.ejecutar(comando)`. `deshacerUltimaAccion()` desapila y revierte. |
@@ -76,3 +82,4 @@ Todos los patrones participan activamente en el **flujo real de producción**, a
    - `InvocadorComandos.deshacerUltimo()` desapila el comando.
    - `AvanzarEstadoComando.deshacer()` toma el memento previo, restaura el estado en `SeguimientoTramite` y actualiza la persistencia.
    - Se emite una notificación especial con bandera `esReversion = true`.
+
