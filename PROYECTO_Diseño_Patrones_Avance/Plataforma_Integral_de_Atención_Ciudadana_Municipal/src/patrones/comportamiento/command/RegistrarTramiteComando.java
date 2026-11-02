@@ -4,7 +4,7 @@ import modelos.Ciudadano;
 import patrones.comportamiento.observer.CambioEstado;
 import patrones.comportamiento.observer.ObservadorTramite;
 import patrones.creacionales.builder.Expediente;
-import patrones.creacionales.factory.TramiteFactory;
+import patrones.estructurales.proxy.TramiteProxy;
 import repositorios.TramiteRepositorio;
 
 import java.util.ArrayList;
@@ -12,7 +12,7 @@ import java.util.List;
 
 /**
  * Patrón Command: encapsula la acción de registrar un nuevo trámite municipal.
- * Permite ejecutar el registro orquestando Factory, Builder y Repositorio,
+ * Permite ejecutar el registro orquestando Proxy, Factory, Builder y Repositorio,
  * y revertirlo (deshacer) eliminando el expediente creado si permanece en estado inicial.
  */
 public class RegistrarTramiteComando implements Comando {
@@ -44,13 +44,16 @@ public class RegistrarTramiteComando implements Comando {
     }
 
     /**
-     * Patrón Command: ejecuta el procesamiento de la fábrica, persiste el expediente
+     * Patrón Command: valida la autorización mediante el Proxy, persiste el expediente
      * en el repositorio y notifica el evento de registro inicial a los observadores.
+     * Si el Proxy rechaza la solicitud, se lanza SolicitudRechazadaException antes de persistir.
      */
     @Override
     public void ejecutar() {
         System.out.println("---Iniciando Mesa de Partes Virtual---");
-        TramiteFactory.crearTramite(tipoTramite).procesar();
+        // Patrón Proxy: validación y autorización previa al procesamiento real
+        new TramiteProxy(ciudadano, tipoTramite).procesar();
+
         this.expedienteCreado = repositorio.registrar(ciudadano, tipoTramite);
         this.expedienteCreado.mostrarDetalle();
 
@@ -104,9 +107,8 @@ public class RegistrarTramiteComando implements Comando {
             try {
                 o.actualizar(cambio);
             } catch (Exception ex) {
-                System.err.println("Advertencia: observador fallo: " + ex.getMessage());
+                System.err.println("Advertencia: observador fallo en registro: " + ex.getMessage());
             }
         }
     }
 }
-

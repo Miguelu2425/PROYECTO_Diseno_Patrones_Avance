@@ -77,6 +77,7 @@ public class Main extends JFrame {
 
     // Paneles de trabajo
     private PanelRegistro panelRegistro;
+    private PanelImportacion panelImportacion;
     private PanelMisSolicitudes panelMisSolicitudes;
     private PanelHistorialAcciones panelHistorialAcciones;
     private PanelSistema panelSistema;
@@ -259,6 +260,16 @@ public class Main extends JFrame {
             }
         });
 
+        panelImportacion = new PanelImportacion(controlador, () -> {
+            actualizarEstadoBD();
+            if (panelMisSolicitudes != null) {
+                panelMisSolicitudes.recargar();
+            }
+            if (panelHistorialAcciones != null) {
+                panelHistorialAcciones.cargarHistorial();
+            }
+        });
+
         panelMisSolicitudes = new PanelMisSolicitudes(controlador);
 
         panelHistorialAcciones = new PanelHistorialAcciones(controlador);
@@ -269,6 +280,7 @@ public class Main extends JFrame {
 
         // Registro de opciones (una línea por opción)
         agregarOpcion("REGISTRO", "Registrar trámite", panelRegistro);
+        agregarOpcion("REGISTRO", "Importar quejas del sistema antiguo", panelImportacion);
         agregarOpcion("SEGUIMIENTO", "Mis solicitudes", panelMisSolicitudes);
         agregarOpcion("SEGUIMIENTO", "Historial de acciones", panelHistorialAcciones);
         agregarOpcion("SISTEMA", "Conexión (Singleton)", panelSistema);

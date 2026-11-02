@@ -2,6 +2,7 @@ package vistas;
 
 import controladores.AtencionController;
 import patrones.creacionales.builder.Expediente;
+import patrones.estructurales.proxy.SolicitudRechazadaException;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -18,7 +19,7 @@ import java.awt.Insets;
 
 /**
  * Vista Swing: panel para registrar un nuevo trámite ciudadano.
- * GRASP Alta Cohesión: contiene únicamente los controles y validaciones del formulario de registro.
+ * GRASP Alta Cohesión: delega las validaciones íntegramente en el Proxy a través de AtencionController.
  * MVC: se comunica exclusivamente con AtencionController.
  * Adaptación visual: utiliza EstiloVista para tipografías unificadas.
  */
@@ -148,47 +149,40 @@ public class PanelRegistro extends JPanel {
         String correo = correoField.getText().trim();
         String tramite = ((String) tramiteCombo.getSelectedItem()).trim();
 
-        if (dni.isEmpty() || nombre.isEmpty() || correo.isEmpty()) {
+        try {
+            System.out.println("--- Registrando tramite en Mesa de Partes ---");
+            Expediente exp = controlador.atenderCiudadano(dni, nombre, correo, tramite);
+            System.out.println("\n====================================");
+            System.out.println("TRAMITE REGISTRADO CORRECTAMENTE");
+            System.out.println("Expediente: " + exp.getCodigo());
+            System.out.println("Ciudadano:  " + nombre + " (DNI: " + dni + ")");
+            System.out.println("Correo:     " + correo);
+            System.out.println("Tipo:       " + tramite.toUpperCase());
+            System.out.println("Estado:     " + exp.getEstado());
+            System.out.println("====================================\n");
+
+            if (alRegistrar != null) {
+                alRegistrar.run();
+            }
+
             JOptionPane.showMessageDialog(this,
-                    "Complete todos los campos antes de registrar.",
-                    "Datos incompletos", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+                    "El trámite fue registrado correctamente.\nCódigo: " + exp.getCodigo(),
+                    "Registro exitoso", JOptionPane.INFORMATION_MESSAGE);
 
-        if (!dni.matches("\\d{8}")) {
+            limpiarFormulario();
+        } catch (SolicitudRechazadaException ex) {
+            StringBuilder sb = new StringBuilder("La solicitud fue rechazada por los siguientes motivos:\n");
+            for (String motivo : ex.getMotivos()) {
+                sb.append("• ").append(motivo).append("\n");
+            }
             JOptionPane.showMessageDialog(this,
-                    "El DNI debe contener exactamente 8 dígitos.",
-                    "DNI inválido", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        if (!correo.matches("^[\\w.+-]+@[\\w.-]+\\.[A-Za-z]{2,}$")) {
+                    sb.toString().trim(),
+                    "Solicitud rechazada", JOptionPane.WARNING_MESSAGE);
+        } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
-                    "Ingrese un correo electrónico válido.",
-                    "Correo inválido", JOptionPane.WARNING_MESSAGE);
-            return;
+                    "Error al registrar trámite: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
-
-        System.out.println("--- Registrando tramite en Mesa de Partes ---");
-        Expediente exp = controlador.atenderCiudadano(dni, nombre, correo, tramite);
-        System.out.println("\n====================================");
-        System.out.println("TRAMITE REGISTRADO CORRECTAMENTE");
-        System.out.println("Expediente: " + exp.getCodigo());
-        System.out.println("Ciudadano:  " + nombre + " (DNI: " + dni + ")");
-        System.out.println("Correo:     " + correo);
-        System.out.println("Tipo:       " + tramite.toUpperCase());
-        System.out.println("Estado:     " + exp.getEstado());
-        System.out.println("====================================\n");
-
-        if (alRegistrar != null) {
-            alRegistrar.run();
-        }
-
-        JOptionPane.showMessageDialog(this,
-                "El trámite fue registrado correctamente.\nCódigo: " + exp.getCodigo(),
-                "Registro exitoso", JOptionPane.INFORMATION_MESSAGE);
-
-        limpiarFormulario();
     }
 
     public void limpiarFormulario() {

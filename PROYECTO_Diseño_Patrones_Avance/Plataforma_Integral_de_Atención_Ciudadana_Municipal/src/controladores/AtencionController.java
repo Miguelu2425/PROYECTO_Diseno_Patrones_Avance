@@ -7,6 +7,7 @@ import patrones.creacionales.builder.Expediente;
 import patrones.creacionales.singleton.ConexionSingleton;
 import patrones.creacionales.singleton.ConfiguracionPlataforma;
 import patrones.estructurales.facade.MesaPartesFacade;
+import patrones.estructurales.facade.ResultadoImportacion;
 
 import java.util.List;
 
@@ -44,6 +45,16 @@ public class AtencionController {
     public Expediente atenderCiudadano(String dni, String nombre, String correo, String tramite) {
         Ciudadano ciudadano = new Ciudadano(dni, nombre, correo);
         return mesaPartes.registrarNuevoTramite(ciudadano, tramite);
+    }
+
+    /**
+     * Patrón Facade, Adapter, Composite y Proxy:
+     * Importa las quejas del sistema heredado procesándolas mediante el flujo completo.
+     *
+     * @return resultado consolidado de la importación
+     */
+    public ResultadoImportacion importarQuejasAntiguas() {
+        return mesaPartes.importarQuejasAntiguas();
     }
 
     /**

@@ -11,6 +11,12 @@ import patrones.comportamiento.observer.ObservadorConsola;
 import patrones.comportamiento.observer.ObservadorEncuesta;
 import patrones.comportamiento.observer.ObservadorTramite;
 import patrones.creacionales.builder.Expediente;
+import patrones.estructurales.adapter.AdaptadorSistemaAntiguo;
+import patrones.estructurales.adapter.RegistroQuejaAntigua;
+import patrones.estructurales.adapter.SistemaAntiguoQuejas;
+import patrones.estructurales.composite.GrupoTramites;
+import patrones.estructurales.proxy.SolicitudRechazadaException;
+import repositorios.RepositorioException;
 import repositorios.RepositorioFactory;
 import repositorios.TramiteRepositorio;
 
@@ -20,7 +26,7 @@ import java.util.List;
 
 /**
  * Facade: simplifica el registro coordinando Factory, Builder, Repositorio,
- * State, Observer, Command y Memento.
+ * State, Observer, Command, Memento, Adapter, Composite y Proxy.
  * GRASP Controlador / Fachada: punto de entrada de alto nivel para los casos de uso.
  */
 public class MesaPartesFacade {
@@ -93,6 +99,50 @@ public class MesaPartesFacade {
         );
         invocador.ejecutar(comando);
         return comando.getExpedienteCreado();
+    }
+
+    /**
+     * Patrón Facade, Adapter y Composite:
+     * Importa las quejas del sistema antiguo. Carga los registros heredados,
+     * los adapta con AdaptadorSistemaAntiguo, compone el lote con GrupoTramites
+     * y registra cada uno individualmente pasando por Proxy, Command, Repositorio y Observers.
+     *
+     * @return resultado consolidado de la importación
+     */
+    public ResultadoImportacion importarQuejasAntiguas() {
+        ResultadoImportacion resultado = new ResultadoImportacion();
+        SistemaAntiguoQuejas sistemaAntiguo = new SistemaAntiguoQuejas();
+        List<RegistroQuejaAntigua> registros = sistemaAntiguo.obtenerQuejasHeredadas();
+
+        // 1. Adaptar y agrupar con Composite
+        GrupoTramites grupo = new GrupoTramites();
+        List<AdaptadorSistemaAntiguo> adaptadores = new ArrayList<>();
+        for (RegistroQuejaAntigua reg : registros) {
+            AdaptadorSistemaAntiguo adaptador = new AdaptadorSistemaAntiguo(reg, sistemaAntiguo);
+            adaptadores.add(adaptador);
+            grupo.agregarTramite(adaptador);
+        }
+
+        // 2. Procesar el lote de forma uniforme con Composite
+        grupo.procesar();
+
+        // 3. Registrar cada trámite adaptado en el flujo completo
+        for (AdaptadorSistemaAntiguo adaptador : adaptadores) {
+            RegistroQuejaAntigua reg = adaptador.getRegistro();
+            String descHeredado = reg.getId() + " (DNI: " + reg.getDni() + ", " + reg.getNombreCompleto() + ")";
+            try {
+                Expediente exp = registrarNuevoTramite(adaptador.getCiudadano(), adaptador.getTipoTramite());
+                resultado.agregarImportado(exp);
+            } catch (SolicitudRechazadaException ex) {
+                resultado.agregarRechazado(descHeredado, ex.getMessage());
+            } catch (RepositorioException ex) {
+                resultado.agregarRechazado(descHeredado, ex.getMessage());
+            } catch (Exception ex) {
+                resultado.agregarRechazado(descHeredado, ex.getMessage());
+            }
+        }
+
+        return resultado;
     }
 
     /**
