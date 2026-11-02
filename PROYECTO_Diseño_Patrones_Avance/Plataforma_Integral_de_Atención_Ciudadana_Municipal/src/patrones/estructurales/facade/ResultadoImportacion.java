@@ -72,3 +72,4 @@ public class ResultadoImportacion {
         return importados.size() + rechazados.size();
     }
 }
+

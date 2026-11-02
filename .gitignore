@@ -1,8 +1,23 @@
-﻿build/
-dist/
+# Credenciales y configuracion local sensible
+config.properties
+**/config.properties
+
+# Archivos compilados y artefactos
+*.class
+*.rs
+build/
+**/build/
 out/
+**/out/
+dist/
+**/dist/
+
+# Archivos de configuracion privada de NetBeans e IDEs
+nbproject/private/
+**/nbproject/private/
 .idea/
 *.iml
-*.class
-**/nbproject/private/
-config.properties
+
+# Scripts de automatizacion local
+*.ps1
+*.bat

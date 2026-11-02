@@ -45,3 +45,4 @@ public class RegistroQuejaAntigua {
         return id + " | DNI: " + dni + " | " + nombreCompleto + " | " + descripcionQueja;
     }
 }
+

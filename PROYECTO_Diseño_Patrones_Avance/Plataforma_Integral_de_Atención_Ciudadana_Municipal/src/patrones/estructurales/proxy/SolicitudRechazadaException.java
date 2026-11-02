@@ -40,3 +40,4 @@ public class SolicitudRechazadaException extends RuntimeException {
         return Collections.unmodifiableList(motivos);
     }
 }
+
